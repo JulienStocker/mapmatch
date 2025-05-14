@@ -3,8 +3,8 @@ import styled from 'styled-components';
 
 const ControlContainer = styled.div`
   position: absolute;
-  top: 70px;
-  left: 10px;
+  top: 10px;
+  left: 270px;
   z-index: 1;
   background: white;
   padding: 12px;

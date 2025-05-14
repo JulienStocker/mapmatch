@@ -349,7 +349,41 @@ const ReactMapGLComponent = () => {
         <Marker 
           longitude={markerPosition.longitude} 
           latitude={markerPosition.latitude} 
-          color="red" 
+          color="red"
+          draggable={true}
+          onDragStart={() => {
+            // Clear existing isochrone when starting to drag
+            setIsochroneData(null);
+          }}
+          onDrag={evt => {
+            setMarkerPosition({
+              longitude: evt.lngLat.lng,
+              latitude: evt.lngLat.lat
+            });
+          }}
+          onDragEnd={evt => {
+            // Reverse geocode to get location name after drag
+            axios.get(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${evt.lngLat.lng},${evt.lngLat.lat}.json`,
+              {
+                params: {
+                  access_token: MAPBOX_TOKEN,
+                  limit: 1
+                }
+              }
+            )
+            .then(response => {
+              if (response.data.features.length > 0) {
+                setLocationName(response.data.features[0].place_name);
+              } else {
+                setLocationName(`${evt.lngLat.lat.toFixed(4)}, ${evt.lngLat.lng.toFixed(4)}`);
+              }
+            })
+            .catch(error => {
+              console.error('Error reverse geocoding:', error);
+              setLocationName(`${evt.lngLat.lat.toFixed(4)}, ${evt.lngLat.lng.toFixed(4)}`);
+            });
+          }}
         />
 
         {isochroneData && (
