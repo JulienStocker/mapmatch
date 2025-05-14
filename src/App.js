@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MapProvider } from './contexts/MapContext';
+import React, { useState, useEffect, useContext } from 'react';
+import { MapProvider, MapContext } from './contexts/MapContext';
 import Header from './components/Header';
 import MapView from './components/MapView';
 import SimpleMap from './components/SimpleMap';
@@ -30,7 +30,8 @@ const MapContainer = styled.div`
   overflow: hidden;
 `;
 
-function App() {
+function AppContent() {
+  const { zoomLevel, changeZoomLevel } = useContext(MapContext);
   const [showSidebar, setShowSidebar] = useState(true);
   const [selectedPOITypes, setSelectedPOITypes] = useState({
     groceries: true,
@@ -39,7 +40,6 @@ function App() {
     hospitals: true
   });
   
-  const [zoomLevel, setZoomLevel] = useState('city'); // 'city', 'neighborhood', 'street'
   // Use ReactMapGL component by default
   const [mapComponent, setMapComponent] = useState('reactmapgl'); // 'reactmapgl', 'simple', or 'original'
 
@@ -52,10 +52,6 @@ function App() {
       ...selectedPOITypes,
       [type]: !selectedPOITypes[type]
     });
-  };
-
-  const changeZoomLevel = (level) => {
-    setZoomLevel(level);
   };
   
   // Debug log the container dimensions
@@ -73,30 +69,36 @@ function App() {
   }, []);
 
   return (
-    <MapProvider>
-      <AppContainer>
-        <Header toggleSidebar={toggleSidebar} />
-        <MainContent>
-          {showSidebar && (
-            <Sidebar 
-              selectedPOITypes={selectedPOITypes} 
-              togglePOIType={togglePOIType}
+    <AppContainer>
+      <Header toggleSidebar={toggleSidebar} />
+      <MainContent>
+        {showSidebar && (
+          <Sidebar 
+            selectedPOITypes={selectedPOITypes} 
+            togglePOIType={togglePOIType}
+            zoomLevel={zoomLevel}
+            changeZoomLevel={changeZoomLevel}
+          />
+        )}
+        <MapContainer>
+          {mapComponent === 'reactmapgl' && <ReactMapGLComponent />}
+          {mapComponent === 'simple' && <SimpleMap />}
+          {mapComponent === 'original' && (
+            <MapView 
+              selectedPOITypes={selectedPOITypes}
               zoomLevel={zoomLevel}
-              changeZoomLevel={changeZoomLevel}
             />
           )}
-          <MapContainer>
-            {mapComponent === 'reactmapgl' && <ReactMapGLComponent />}
-            {mapComponent === 'simple' && <SimpleMap />}
-            {mapComponent === 'original' && (
-              <MapView 
-                selectedPOITypes={selectedPOITypes}
-                zoomLevel={zoomLevel}
-              />
-            )}
-          </MapContainer>
-        </MainContent>
-      </AppContainer>
+        </MapContainer>
+      </MainContent>
+    </AppContainer>
+  );
+}
+
+function App() {
+  return (
+    <MapProvider>
+      <AppContent />
     </MapProvider>
   );
 }

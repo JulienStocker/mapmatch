@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import Map, { NavigationControl, Marker } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
 import axios from 'axios';
+import { MapContext } from '../contexts/MapContext';
 
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoianVsaWVuc3RvY2tlciIsImEiOiJjbWFvYWhqMXAwNW9vMmpyMGtmNjBqYzZoIn0.MDBDP08GAAF2SuXeAN3yuw';
@@ -11,6 +12,20 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoianVsaWVuc3RvY2tlciIsImEiOiJjbWFvYWhqMXAwNW9vMmp
 const SWITZERLAND_COORDINATES = {
   lng: 8.2275,
   lat: 46.8182
+};
+
+// Zoom level mappings - keep in sync with other components
+const zoomLevels = {
+  world: 1,
+  continent: 4,
+  country: 6,
+  state: 8,
+  city: 10,
+  district: 12,
+  neighborhood: 14,
+  street: 16,
+  building: 18,
+  max: 20
 };
 
 const SearchContainer = styled.div`
@@ -66,10 +81,12 @@ const LocationLabel = styled.div`
 `;
 
 const ReactMapGLComponent = () => {
+  const { zoomLevel } = useContext(MapContext);
+  
   const [viewState, setViewState] = useState({
     longitude: SWITZERLAND_COORDINATES.lng,
     latitude: SWITZERLAND_COORDINATES.lat,
-    zoom: 7
+    zoom: zoomLevels.country // Default to country view of Switzerland
   });
   
   const [markerPosition, setMarkerPosition] = useState({
@@ -80,6 +97,16 @@ const ReactMapGLComponent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [locationName, setLocationName] = useState('Switzerland');
+  
+  // Update zoom level when it changes in context
+  useEffect(() => {
+    if (zoomLevel && zoomLevels[zoomLevel]) {
+      setViewState(prev => ({
+        ...prev,
+        zoom: zoomLevels[zoomLevel]
+      }));
+    }
+  }, [zoomLevel]);
   
   // Function to search for locations using Mapbox Geocoding API
   const searchLocations = useCallback(async (query) => {

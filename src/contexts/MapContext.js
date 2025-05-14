@@ -6,10 +6,25 @@ export const MapContext = createContext();
 // Set the API base URL to the test server port
 const API_URL = 'http://localhost:5001/api';
 
+// Zoom level mappings - keep in sync with other components
+const zoomLevels = {
+  world: 1,
+  continent: 4,
+  country: 6,
+  state: 8,
+  city: 10,
+  district: 12,
+  neighborhood: 14,
+  street: 16,
+  building: 18,
+  max: 20
+};
+
 export const MapProvider = ({ children }) => {
   const [mapInstance, setMapInstance] = useState(null);
-  const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 }); // Default to San Francisco
-  const [mapZoom, setMapZoom] = useState(10);
+  const [mapCenter, setMapCenter] = useState({ lat: 46.8182, lng: 8.2275 }); // Default to Switzerland
+  const [mapZoom, setMapZoom] = useState(zoomLevels.country);
+  const [zoomLevel, setZoomLevel] = useState('country'); // Default to country view
   const [properties, setProperties] = useState([]);
   const [pointsOfInterest, setPointsOfInterest] = useState({
     groceries: [],
@@ -18,6 +33,31 @@ export const MapProvider = ({ children }) => {
     hospitals: []
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Update the numeric zoom when the named zoom level changes
+  useEffect(() => {
+    if (zoomLevel && zoomLevels[zoomLevel]) {
+      setMapZoom(zoomLevels[zoomLevel]);
+    }
+  }, [zoomLevel]);
+
+  // Update the named zoom level when the numeric zoom changes
+  useEffect(() => {
+    // Find the closest named zoom level for the current mapZoom
+    const entries = Object.entries(zoomLevels);
+    let closestLevel = entries[0];
+    
+    for (const [level, value] of entries) {
+      if (Math.abs(value - mapZoom) < Math.abs(closestLevel[1] - mapZoom)) {
+        closestLevel = [level, value];
+      }
+    }
+    
+    // Only update if different to avoid loops
+    if (closestLevel[0] !== zoomLevel) {
+      setZoomLevel(closestLevel[0]);
+    }
+  }, [mapZoom]);
 
   useEffect(() => {
     // Fetch initial properties data
@@ -120,10 +160,14 @@ export const MapProvider = ({ children }) => {
     setMapZoom(zoom);
   };
 
+  const changeZoomLevel = (level) => {
+    setZoomLevel(level);
+  };
+
   const selectProperty = (property) => {
     setSelectedProperty(property);
     if (property) {
-      setMapView(property.coordinates, 15);
+      setMapView(property.coordinates, zoomLevels.street);
     }
   };
 
@@ -135,6 +179,8 @@ export const MapProvider = ({ children }) => {
         mapCenter,
         mapZoom,
         setMapView,
+        zoomLevel,
+        changeZoomLevel,
         properties,
         setProperties,
         pointsOfInterest,

@@ -41,9 +41,16 @@ const ZoomLevelIndicator = styled.div`
 
 // Zoom level mappings
 const zoomLevels = {
+  world: 1,
+  continent: 4,
+  country: 6,
+  state: 8,
   city: 10,
+  district: 12,
   neighborhood: 14,
-  street: 16
+  street: 16,
+  building: 18,
+  max: 20
 };
 
 const MapView = ({ selectedPOITypes, zoomLevel }) => {
