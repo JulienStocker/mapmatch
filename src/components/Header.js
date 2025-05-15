@@ -46,17 +46,34 @@ const NavLinks = styled.div`
   gap: 20px;
 `;
 
-const NavLink = styled.a`
+const NavLink = styled.button`
   color: white;
+  background: none;
+  border: none;
   text-decoration: none;
   font-size: 16px;
+  cursor: pointer;
+  position: relative;
+  padding: 5px 0;
   
   &:hover {
-    text-decoration: underline;
+    opacity: 0.8;
   }
+  
+  ${props => props.active && `
+    &:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: white;
+    }
+  `}
 `;
 
-const Header = ({ toggleSidebar }) => {
+const Header = ({ toggleSidebar, toggleAppMode, appMode = 'map' }) => {
   return (
     <HeaderContainer>
       <Logo>
@@ -68,8 +85,18 @@ const Header = ({ toggleSidebar }) => {
       </Logo>
       
       <NavLinks>
-        <NavLink href="#">Map</NavLink>
-        <NavLink href="#">Saved</NavLink>
+        <NavLink 
+          active={appMode === 'map'} 
+          onClick={() => appMode !== 'map' && toggleAppMode()}
+        >
+          Map
+        </NavLink>
+        <NavLink 
+          active={appMode === 'scout'} 
+          onClick={() => appMode !== 'scout' && toggleAppMode()}
+        >
+          Scout
+        </NavLink>
       </NavLinks>
       
       <MenuButton onClick={toggleSidebar}>

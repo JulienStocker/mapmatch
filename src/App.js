@@ -5,6 +5,7 @@ import MapView from './components/MapView';
 import SimpleMap from './components/SimpleMap';
 import ReactMapGLComponent from './components/ReactMapGL';
 import Sidebar from './components/Sidebar';
+import ScoutView from './components/ScoutView';
 import styled from 'styled-components';
 import mapboxgl from 'mapbox-gl';
 
@@ -58,6 +59,9 @@ function AppContent() {
     trainStation: true,
     busStop: true
   });
+  
+  // Add appMode state to toggle between map and scout views
+  const [appMode, setAppMode] = useState('map'); // 'map' or 'scout'
   
   // Use ReactMapGL component by default
   const [mapComponent, setMapComponent] = useState('reactmapgl'); // 'reactmapgl', 'simple', or 'original'
@@ -113,6 +117,11 @@ function AppContent() {
     });
   };
   
+  // Function to toggle between map and scout modes
+  const toggleAppMode = () => {
+    setAppMode(appMode === 'map' ? 'scout' : 'map');
+  };
+  
   // Debug log the container dimensions
   useEffect(() => {
     const mapContainer = document.querySelector('.map-container');
@@ -129,36 +138,42 @@ function AppContent() {
 
   return (
     <AppContainer>
-      <Header toggleSidebar={toggleSidebar} />
+      <Header toggleSidebar={toggleSidebar} toggleAppMode={toggleAppMode} appMode={appMode} />
       <MainContent>
-        {showSidebar && (
-          <SidebarWrapper>
-            <Sidebar 
-              selectedPOITypes={selectedPOITypes} 
-              togglePOIType={togglePOIType}
-              toggleAllSupermarkets={toggleAllSupermarkets}
-              toggleAllTransport={toggleAllTransport}
-              zoomLevel={zoomLevel}
-              changeZoomLevel={changeZoomLevel}
-              showProperties={showProperties} // Pass the property to hide the properties section
-            />
-          </SidebarWrapper>
+        {appMode === 'map' ? (
+          <>
+            {showSidebar && (
+              <SidebarWrapper>
+                <Sidebar 
+                  selectedPOITypes={selectedPOITypes} 
+                  togglePOIType={togglePOIType}
+                  toggleAllSupermarkets={toggleAllSupermarkets}
+                  toggleAllTransport={toggleAllTransport}
+                  zoomLevel={zoomLevel}
+                  changeZoomLevel={changeZoomLevel}
+                  showProperties={showProperties}
+                />
+              </SidebarWrapper>
+            )}
+            <MapContainer>
+              {mapComponent === 'reactmapgl' && <ReactMapGLComponent 
+                selectedPOITypes={selectedPOITypes} 
+                resetPOIs={resetPOIs} 
+                showProperties={showProperties}
+              />}
+              {mapComponent === 'simple' && <SimpleMap />}
+              {mapComponent === 'original' && (
+                <MapView 
+                  selectedPOITypes={selectedPOITypes}
+                  zoomLevel={zoomLevel}
+                  showProperties={showProperties}
+                />
+              )}
+            </MapContainer>
+          </>
+        ) : (
+          <ScoutView />
         )}
-        <MapContainer>
-          {mapComponent === 'reactmapgl' && <ReactMapGLComponent 
-            selectedPOITypes={selectedPOITypes} 
-            resetPOIs={resetPOIs} 
-            showProperties={showProperties} // Pass the property to hide the properties section
-          />}
-          {mapComponent === 'simple' && <SimpleMap />}
-          {mapComponent === 'original' && (
-            <MapView 
-              selectedPOITypes={selectedPOITypes}
-              zoomLevel={zoomLevel}
-              showProperties={showProperties} // Pass the property to hide the properties section
-            />
-          )}
-        </MapContainer>
       </MainContent>
     </AppContainer>
   );
