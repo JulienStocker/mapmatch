@@ -206,6 +206,8 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [locationName, setLocationName] = useState('Kriens, Switzerland');
+  const [zipCode, setZipCode] = useState('6010'); // Default Kriens zip code
+  const [showMainPinPopup, setShowMainPinPopup] = useState(false); // State to toggle main pin popup
   
   // Isochrone state
   const [showIsochroneControl, setShowIsochroneControl] = useState(true);
@@ -269,6 +271,27 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     return () => clearTimeout(timeoutId);
   }, [searchQuery, searchLocations]);
   
+  // Extract zip code from geocoding response
+  const extractZipCode = useCallback((features) => {
+    if (!features || features.length === 0) return null;
+    
+    // Try to find postal code in the context
+    if (features[0].context) {
+      const postalCodeFeature = features[0].context.find(
+        item => item.id.startsWith('postcode.')
+      );
+      if (postalCodeFeature) {
+        return postalCodeFeature.text;
+      }
+    }
+    
+    // Try to parse from the place name as a fallback
+    const placeName = features[0].place_name;
+    const zipCodeMatch = placeName.match(/\b\d{4,5}\b/); // Match 4-5 digit numbers (most zip codes)
+    
+    return zipCodeMatch ? zipCodeMatch[0] : null;
+  }, []);
+  
   // Handle search result selection
   const handleSelectLocation = (result) => {
     const [longitude, latitude] = result.center;
@@ -286,6 +309,13 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     });
     
     setLocationName(result.place_name);
+    
+    // Extract zip code if available
+    const extractedZipCode = extractZipCode([result]);
+    if (extractedZipCode) {
+      setZipCode(extractedZipCode);
+    }
+    
     setSearchResults([]);
     setSearchQuery('');
     
@@ -542,6 +572,10 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     // Clear existing isochrone when placing a new marker
     setIsochroneData(null);
     
+    // Hide any existing popups
+    setShowMainPinPopup(false);
+    setSelectedPoi(null);
+    
     // Reverse geocode to get location name
     axios.get(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json`,
@@ -555,6 +589,12 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     .then(response => {
       if (response.data.features.length > 0) {
         setLocationName(response.data.features[0].place_name);
+        
+        // Extract zip code if available
+        const extractedZipCode = extractZipCode(response.data.features);
+        if (extractedZipCode) {
+          setZipCode(extractedZipCode);
+        }
       } else {
         setLocationName(`${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`);
       }
@@ -566,7 +606,7 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
       console.error('Error reverse geocoding:', error);
       setLocationName(`${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`);
     });
-  }, []);
+  }, [extractZipCode]);
 
   // Get marker color for POI type
   const getMarkerColor = (poiType) => {
@@ -708,9 +748,18 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
           latitude={markerPosition.latitude} 
           color="red"
           draggable={true}
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            // Toggle the main pin popup
+            setShowMainPinPopup(!showMainPinPopup);
+            // Close any POI popup
+            setSelectedPoi(null);
+          }}
           onDragStart={() => {
             // Clear existing isochrone when starting to drag
             setIsochroneData(null);
+            // Hide the popup during drag
+            setShowMainPinPopup(false);
           }}
           onDrag={evt => {
             setMarkerPosition({
@@ -732,6 +781,12 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
             .then(response => {
               if (response.data.features.length > 0) {
                 setLocationName(response.data.features[0].place_name);
+                
+                // Extract zip code if available
+                const extractedZipCode = extractZipCode(response.data.features);
+                if (extractedZipCode) {
+                  setZipCode(extractedZipCode);
+                }
               } else {
                 setLocationName(`${evt.lngLat.lat.toFixed(4)}, ${evt.lngLat.lng.toFixed(4)}`);
               }
@@ -768,6 +823,27 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
                   Rating: {selectedPoi.rating} ⭐
                 </div>
               )}
+            </StyledPopup>
+          </Popup>
+        )}
+
+        {/* Show popup for main pin */}
+        {showMainPinPopup && (
+          <Popup
+            longitude={markerPosition.longitude}
+            latitude={markerPosition.latitude}
+            anchor="bottom"
+            onClose={() => setShowMainPinPopup(false)}
+            closeButton={true}
+          >
+            <StyledPopup>
+              <PopupTitle>Selected Location</PopupTitle>
+              <PopupAddress>
+                {locationName}
+              </PopupAddress>
+              <div style={{ fontSize: '14px', marginTop: '8px', fontWeight: 'bold' }}>
+                ZIP Code: {zipCode || 'Not available'}
+              </div>
             </StyledPopup>
           </Popup>
         )}
