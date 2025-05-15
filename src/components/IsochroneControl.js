@@ -2,14 +2,9 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const ControlContainer = styled.div`
-  position: absolute;
-  top: 10px;
-  left: 270px;
-  z-index: 1;
   background: white;
   padding: 12px;
   border-radius: 4px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   width: 250px;
 `;
 
@@ -42,6 +37,15 @@ const RadioLabel = styled.label`
   gap: 5px;
   font-size: 12px;
   cursor: pointer;
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 8px;
 `;
 
 const ToggleGroup = styled.div`
@@ -94,11 +98,19 @@ const Button = styled.button`
   }
 `;
 
-const IsochroneControl = ({ onGenerateIsochrone }) => {
+const InfoText = styled.p`
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0;
+  font-style: italic;
+`;
+
+const IsochroneControl = ({ onGenerateIsochrone, hasSelectedPOIs }) => {
   const [profile, setProfile] = useState('walking');
   const [contourType, setContourType] = useState('minutes');
   const [contourValue, setContourValue] = useState('10 min');
   const [generatingIsochrone, setGeneratingIsochrone] = useState(false);
+  const [generateForAllPOIs, setGenerateForAllPOIs] = useState(false);
 
   const handleProfileChange = (e) => {
     setProfile(e.target.value);
@@ -117,6 +129,10 @@ const IsochroneControl = ({ onGenerateIsochrone }) => {
   const handleContourValueChange = (e) => {
     setContourValue(e.target.value);
   };
+  
+  const handleGenerateForAllPOIsChange = (e) => {
+    setGenerateForAllPOIs(e.target.checked);
+  };
 
   const handleGenerateClick = () => {
     setGeneratingIsochrone(true);
@@ -132,7 +148,8 @@ const IsochroneControl = ({ onGenerateIsochrone }) => {
     onGenerateIsochrone({
       profile,
       contourType,
-      contourValue: value
+      contourValue: value,
+      generateForAllPOIs
     })
     .finally(() => {
       setGeneratingIsochrone(false);
@@ -141,7 +158,7 @@ const IsochroneControl = ({ onGenerateIsochrone }) => {
 
   return (
     <ControlContainer>
-      <Title>Isochrone Controls</Title>
+      <Title>MapMatch Controls</Title>
       
       <Section>
         <SectionLabel>Routing Profile</SectionLabel>
@@ -218,11 +235,29 @@ const IsochroneControl = ({ onGenerateIsochrone }) => {
         </Select>
       </Section>
       
+      <Section>
+        <CheckboxLabel>
+          <input 
+            type="checkbox" 
+            checked={generateForAllPOIs} 
+            onChange={handleGenerateForAllPOIsChange}
+            disabled={!hasSelectedPOIs}
+          />
+          Generate for all visible POIs
+        </CheckboxLabel>
+        {!hasSelectedPOIs && (
+          <InfoText>No POIs are currently selected or visible on map</InfoText>
+        )}
+        {generateForAllPOIs && (
+          <InfoText>This will generate a MapMatch for each selected POI on the map</InfoText>
+        )}
+      </Section>
+      
       <Button 
         onClick={handleGenerateClick}
         disabled={generatingIsochrone}
       >
-        {generatingIsochrone ? 'Generating...' : 'Generate Isochrone'}
+        {generatingIsochrone ? 'Generating...' : 'Generate MapMatch'}
       </Button>
     </ControlContainer>
   );

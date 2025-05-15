@@ -81,6 +81,21 @@ function AppContent() {
     });
   };
   
+  // Reset all POI selections by setting all to false
+  const resetPOIs = () => {
+    setSelectedPOITypes({
+      hospitals: false,
+      migros: false,
+      coop: false,
+      aldi: false,
+      lidl: false,
+      denner: false,
+      spar: false,
+      trainStation: false,
+      busStop: false
+    });
+  };
+  
   // Debug log the container dimensions
   useEffect(() => {
     const mapContainer = document.querySelector('.map-container');
@@ -110,7 +125,10 @@ function AppContent() {
           />
         )}
         <MapContainer>
-          {mapComponent === 'reactmapgl' && <ReactMapGLComponent selectedPOITypes={selectedPOITypes} />}
+          {mapComponent === 'reactmapgl' && <ReactMapGLComponent 
+            selectedPOITypes={selectedPOITypes} 
+            resetPOIs={resetPOIs} 
+          />}
           {mapComponent === 'simple' && <SimpleMap />}
           {mapComponent === 'original' && (
             <MapView 

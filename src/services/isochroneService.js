@@ -67,7 +67,7 @@ export const getIsochroneColor = (profile, value) => {
   const color = baseColors[profile] || [100, 100, 100];
   
   // Calculate opacity based on contour value (higher values = more transparent)
-  const opacity = 0.7 - (Math.min(value, 60) / 100);
+  const opacity = 0.5 - (Math.min(value, 60) / 100);
   
   return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${opacity})`;
 };
