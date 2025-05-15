@@ -237,34 +237,42 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, zoomLevel, changeZoomLevel }
           <CheckboxLabel>
             <input 
               type="checkbox" 
-              checked={selectedPOITypes.groceries} 
-              onChange={() => togglePOIType('groceries')} 
-            />
-            Grocery Stores
-          </CheckboxLabel>
-          <CheckboxLabel>
-            <input 
-              type="checkbox" 
-              checked={selectedPOITypes.malls} 
-              onChange={() => togglePOIType('malls')} 
-            />
-            Shopping Malls
-          </CheckboxLabel>
-          <CheckboxLabel>
-            <input 
-              type="checkbox" 
-              checked={selectedPOITypes.transport} 
-              onChange={() => togglePOIType('transport')} 
-            />
-            Transportation Hubs
-          </CheckboxLabel>
-          <CheckboxLabel>
-            <input 
-              type="checkbox" 
               checked={selectedPOITypes.hospitals} 
               onChange={() => togglePOIType('hospitals')} 
             />
             Hospitals
+          </CheckboxLabel>
+          <CheckboxLabel>
+            <input 
+              type="checkbox" 
+              checked={selectedPOITypes.migros} 
+              onChange={() => togglePOIType('migros')} 
+            />
+            Migros
+          </CheckboxLabel>
+          <CheckboxLabel>
+            <input 
+              type="checkbox" 
+              checked={selectedPOITypes.coop} 
+              onChange={() => togglePOIType('coop')} 
+            />
+            Coop
+          </CheckboxLabel>
+          <CheckboxLabel>
+            <input 
+              type="checkbox" 
+              checked={selectedPOITypes.aldi} 
+              onChange={() => togglePOIType('aldi')} 
+            />
+            Aldi
+          </CheckboxLabel>
+          <CheckboxLabel>
+            <input 
+              type="checkbox" 
+              checked={selectedPOITypes.lidl} 
+              onChange={() => togglePOIType('lidl')} 
+            />
+            Lidl
           </CheckboxLabel>
         </CheckboxGroup>
       </SidebarSection>

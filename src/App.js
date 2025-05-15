@@ -34,10 +34,11 @@ function AppContent() {
   const { zoomLevel, changeZoomLevel } = useContext(MapContext);
   const [showSidebar, setShowSidebar] = useState(true);
   const [selectedPOITypes, setSelectedPOITypes] = useState({
-    groceries: true,
-    malls: true,
-    transport: true,
-    hospitals: true
+    hospitals: true,
+    migros: true,
+    coop: true,
+    aldi: true,
+    lidl: true
   });
   
   // Use ReactMapGL component by default
@@ -81,7 +82,7 @@ function AppContent() {
           />
         )}
         <MapContainer>
-          {mapComponent === 'reactmapgl' && <ReactMapGLComponent />}
+          {mapComponent === 'reactmapgl' && <ReactMapGLComponent selectedPOITypes={selectedPOITypes} />}
           {mapComponent === 'simple' && <SimpleMap />}
           {mapComponent === 'original' && (
             <MapView 

@@ -40,14 +40,17 @@ const POIMarker = ({ poi, type }) => {
   // Get icon URL based on POI type
   let iconUrl;
   switch(type) {
-    case 'groceries':
+    case 'migros':
       iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724888.png';
       break;
-    case 'malls':
+    case 'coop':
       iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724927.png';
       break;
-    case 'transport':
-      iconUrl = 'https://cdn-icons-png.flaticon.com/512/2549/2549605.png';
+    case 'aldi':
+      iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724888.png';
+      break;
+    case 'lidl':
+      iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724888.png';
       break;
     case 'hospitals':
       iconUrl = 'https://cdn-icons-png.flaticon.com/512/3158/3158267.png';
@@ -59,14 +62,17 @@ const POIMarker = ({ poi, type }) => {
   // Get display name for POI type
   let typeDisplayName;
   switch(type) {
-    case 'groceries':
-      typeDisplayName = 'Grocery Store';
+    case 'migros':
+      typeDisplayName = 'Migros';
       break;
-    case 'malls':
-      typeDisplayName = 'Shopping Mall';
+    case 'coop':
+      typeDisplayName = 'Coop';
       break;
-    case 'transport':
-      typeDisplayName = 'Transport Hub';
+    case 'aldi':
+      typeDisplayName = 'Aldi';
+      break;
+    case 'lidl':
+      typeDisplayName = 'Lidl';
       break;
     case 'hospitals':
       typeDisplayName = 'Hospital';

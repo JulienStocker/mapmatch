@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect, useContext, useMemo } from 'react';
-import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl';
+import Map, { NavigationControl, Marker, Source, Layer, Popup } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
 import axios from 'axios';
 import { MapContext } from '../contexts/MapContext';
 import IsochroneControl from './IsochroneControl';
 import { fetchIsochrone, getFeatureColor } from '../services/isochroneService';
+import { fetchAllPOIs } from '../services/placesService';
 
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoianVsaWVuc3RvY2tlciIsImEiOiJjbWFvYWhqMXAwNW9vMmpyMGtmNjBqYzZoIn0.MDBDP08GAAF2SuXeAN3yuw';
@@ -115,7 +116,23 @@ const ControlToggle = styled.button`
   }
 `;
 
-const ReactMapGLComponent = () => {
+const StyledPopup = styled.div`
+  padding: 10px;
+  max-width: 200px;
+`;
+
+const PopupTitle = styled.h3`
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: bold;
+`;
+
+const PopupAddress = styled.p`
+  margin: 0 0 5px;
+  font-size: 12px;
+`;
+
+const ReactMapGLComponent = ({ selectedPOITypes }) => {
   const { zoomLevel } = useContext(MapContext);
   
   const [viewState, setViewState] = useState({
@@ -139,6 +156,11 @@ const ReactMapGLComponent = () => {
   const [isochroneParams, setIsochroneParams] = useState(null);
   const [isochroneLoading, setIsochroneLoading] = useState(false);
   const [isochroneError, setIsochroneError] = useState(null);
+  
+  // POI state
+  const [pois, setPois] = useState({});
+  const [loadingPOIs, setLoadingPOIs] = useState(false);
+  const [selectedPoi, setSelectedPoi] = useState(null);
   
   // Update zoom level when it changes in context
   useEffect(() => {
@@ -207,7 +229,34 @@ const ReactMapGLComponent = () => {
     
     // Clear existing isochrone when selecting a new location
     setIsochroneData(null);
+    
+    // Fetch POIs for the selected location
+    fetchPOIsForLocation({ lat: latitude, lng: longitude });
   };
+
+  // Fetch POIs for the given location
+  const fetchPOIsForLocation = async (coords) => {
+    setLoadingPOIs(true);
+    try {
+      const poiData = await fetchAllPOIs(coords, selectedPOITypes, 5000);
+      setPois(poiData);
+    } catch (error) {
+      console.error('Error fetching POIs:', error);
+    } finally {
+      setLoadingPOIs(false);
+    }
+  };
+  
+  // Update POIs when selected types change
+  useEffect(() => {
+    if (markerPosition && markerPosition.latitude) {
+      const coords = {
+        lat: markerPosition.latitude,
+        lng: markerPosition.longitude
+      };
+      fetchPOIsForLocation(coords);
+    }
+  }, [selectedPOITypes, markerPosition]);
 
   // Generate isochrone for current marker position
   const handleGenerateIsochrone = async (params) => {
@@ -298,12 +347,65 @@ const ReactMapGLComponent = () => {
       } else {
         setLocationName(`${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`);
       }
+      
+      // Fetch POIs for the clicked location
+      fetchPOIsForLocation({ lat: lngLat.lat, lng: lngLat.lng });
     })
     .catch(error => {
       console.error('Error reverse geocoding:', error);
       setLocationName(`${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`);
     });
   }, []);
+
+  // Get marker color for POI type
+  const getMarkerColor = (poiType) => {
+    switch(poiType) {
+      case 'hospitals':
+        return '#ff4757'; // Red
+      case 'migros':
+        return '#ff9f43'; // Orange
+      case 'coop':
+        return '#0984e3'; // Blue
+      case 'aldi':
+        return '#00b894'; // Green
+      case 'lidl':
+        return '#6c5ce7'; // Purple
+      default:
+        return '#2d3436'; // Dark grey
+    }
+  };
+
+  // Render POI markers for all selected types
+  const renderPOIMarkers = () => {
+    const markers = [];
+    
+    Object.keys(pois).forEach(poiType => {
+      if (pois[poiType] && pois[poiType].length > 0) {
+        pois[poiType].forEach(poi => {
+          if (poi.geometry && poi.geometry.location) {
+            const lat = poi.geometry.location.lat;
+            const lng = poi.geometry.location.lng;
+            
+            markers.push(
+              <Marker
+                key={`${poiType}-${poi.place_id}`}
+                longitude={lng}
+                latitude={lat}
+                color={getMarkerColor(poiType)}
+                scale={0.7}
+                onClick={(e) => {
+                  e.originalEvent.stopPropagation();
+                  setSelectedPoi({ ...poi, poiType });
+                }}
+              />
+            );
+          }
+        });
+      }
+    });
+    
+    return markers;
+  };
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
@@ -378,6 +480,9 @@ const ReactMapGLComponent = () => {
               } else {
                 setLocationName(`${evt.lngLat.lat.toFixed(4)}, ${evt.lngLat.lng.toFixed(4)}`);
               }
+              
+              // Fetch POIs for the new marker position
+              fetchPOIsForLocation({ lat: evt.lngLat.lat, lng: evt.lngLat.lng });
             })
             .catch(error => {
               console.error('Error reverse geocoding:', error);
@@ -385,6 +490,32 @@ const ReactMapGLComponent = () => {
             });
           }}
         />
+
+        {/* Render POI markers */}
+        {renderPOIMarkers()}
+        
+        {/* Show popup for selected POI */}
+        {selectedPoi && (
+          <Popup
+            longitude={selectedPoi.geometry.location.lng}
+            latitude={selectedPoi.geometry.location.lat}
+            anchor="bottom"
+            onClose={() => setSelectedPoi(null)}
+            closeButton={true}
+          >
+            <StyledPopup>
+              <PopupTitle>{selectedPoi.name}</PopupTitle>
+              {selectedPoi.vicinity && (
+                <PopupAddress>{selectedPoi.vicinity}</PopupAddress>
+              )}
+              {selectedPoi.rating && (
+                <div style={{ fontSize: '12px' }}>
+                  Rating: {selectedPoi.rating} ⭐
+                </div>
+              )}
+            </StyledPopup>
+          </Popup>
+        )}
 
         {isochroneData && (
           <Source id="isochrone-data" type="geojson" data={isochroneData}>
@@ -397,6 +528,12 @@ const ReactMapGLComponent = () => {
       <LocationLabel>
         {locationName}
       </LocationLabel>
+      
+      {loadingPOIs && (
+        <InfoOverlay>
+          Loading points of interest...
+        </InfoOverlay>
+      )}
       
       {isochroneParams && isochroneData && (
         <InfoOverlay>
