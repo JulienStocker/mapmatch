@@ -272,7 +272,7 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, zoomL
               checked={selectedPOITypes.hospitals} 
               onChange={() => togglePOIType('hospitals')} 
             />
-            Hospitals
+            Healthcare
           </CheckboxLabel>
           
           {/* Supermarkets parent checkbox */}

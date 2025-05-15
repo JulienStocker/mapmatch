@@ -87,7 +87,7 @@ const POIMarker = ({ poi, type }) => {
       typeDisplayName = 'Spar';
       break;
     case 'hospitals':
-      typeDisplayName = 'Hospital';
+      typeDisplayName = 'Healthcare';
       break;
     default:
       typeDisplayName = type;
