@@ -47,6 +47,9 @@ function AppContent() {
   
   // Use ReactMapGL component by default
   const [mapComponent, setMapComponent] = useState('reactmapgl'); // 'reactmapgl', 'simple', or 'original'
+  
+  // Hide properties panel
+  const [showProperties, setShowProperties] = useState(false); // Setting this to false to hide properties
 
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
@@ -122,18 +125,21 @@ function AppContent() {
             toggleAllTransport={toggleAllTransport}
             zoomLevel={zoomLevel}
             changeZoomLevel={changeZoomLevel}
+            showProperties={showProperties} // Pass the property to hide the properties section
           />
         )}
         <MapContainer>
           {mapComponent === 'reactmapgl' && <ReactMapGLComponent 
             selectedPOITypes={selectedPOITypes} 
             resetPOIs={resetPOIs} 
+            showProperties={showProperties} // Pass the property to hide the properties section
           />}
           {mapComponent === 'simple' && <SimpleMap />}
           {mapComponent === 'original' && (
             <MapView 
               selectedPOITypes={selectedPOITypes}
               zoomLevel={zoomLevel}
+              showProperties={showProperties} // Pass the property to hide the properties section
             />
           )}
         </MapContainer>

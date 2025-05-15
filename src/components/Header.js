@@ -68,7 +68,6 @@ const Header = ({ toggleSidebar }) => {
       </Logo>
       
       <NavLinks>
-        <NavLink href="#">Properties</NavLink>
         <NavLink href="#">Map</NavLink>
         <NavLink href="#">Saved</NavLink>
       </NavLinks>

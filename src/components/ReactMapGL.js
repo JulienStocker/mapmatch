@@ -177,7 +177,7 @@ const PopupAddress = styled.p`
   font-size: 12px;
 `;
 
-const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
+const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = false }) => {
   const { zoomLevel } = useContext(MapContext);
   
   const [viewState, setViewState] = useState({

@@ -159,7 +159,7 @@ const getZoomName = (value) => {
   return 'Maximum';
 };
 
-const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggleAllTransport, zoomLevel, changeZoomLevel }) => {
+const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggleAllTransport, zoomLevel, changeZoomLevel, showProperties = true }) => {
   const { properties, selectProperty, selectedProperty } = useContext(MapContext);
   const [sliderValue, setSliderValue] = useState(zoomLevelMap[zoomLevel] || 10);
   const [supermarketsExpanded, setSupermarketsExpanded] = useState(false);
@@ -413,20 +413,25 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggl
         </CheckboxGroup>
       </SidebarSection>
       
-      <SidebarSection>
-        <SectionTitle>Properties ({properties.length})</SectionTitle>
-      </SidebarSection>
-      
-      <PropertiesContainer>
-        {properties.map(property => (
-          <PropertyCard 
-            key={property.id} 
-            property={property} 
-            onClick={() => selectProperty(property)}
-            isSelected={selectedProperty && selectedProperty.id === property.id}
-          />
-        ))}
-      </PropertiesContainer>
+      {/* Hide Properties section when showProperties is false */}
+      {showProperties && (
+        <>
+          <SidebarSection>
+            <SectionTitle>Properties ({properties.length})</SectionTitle>
+          </SidebarSection>
+          
+          <PropertiesContainer>
+            {properties.map(property => (
+              <PropertyCard 
+                key={property.id} 
+                property={property} 
+                onClick={() => selectProperty(property)}
+                isSelected={selectedProperty && selectedProperty.id === property.id}
+              />
+            ))}
+          </PropertiesContainer>
+        </>
+      )}
     </SidebarContainer>
   );
 };
