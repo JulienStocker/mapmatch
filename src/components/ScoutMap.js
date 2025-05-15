@@ -4,7 +4,6 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import styled from 'styled-components';
 import axios from 'axios';
 import { MapContext } from '../contexts/MapContext';
-import IsochroneControl from './IsochroneControl';
 import { fetchIsochrone, getFeatureColor } from '../services/isochroneService';
 import { fetchAllPOIs } from '../services/placesService';
 
@@ -29,7 +28,7 @@ const KRIENS_COORDINATES = {
   lat: 47.0331
 };
 
-// Zoom level mappings - keep in sync with other components
+// Zoom level mappings
 const zoomLevels = {
   world: 1,
   continent: 4,
@@ -108,26 +107,6 @@ const InfoOverlay = styled.div`
   z-index: 1;
 `;
 
-const ControlToggle = styled.button`
-  position: absolute;
-  top: 10px;
-  right: 60px;
-  background: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 13px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  
-  &:hover {
-    background: #f8f9fa;
-  }
-`;
-
 const ResetButton = styled.button`
   position: absolute;
   top: 50px;
@@ -148,19 +127,6 @@ const ResetButton = styled.button`
   }
 `;
 
-const IsochroneControlContainer = styled.div`
-  position: absolute;
-  top: 48px;
-  right: 60px;
-  z-index: 1;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  padding: 0;
-  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
-  transform-origin: top right;
-`;
-
 const StyledPopup = styled.div`
   padding: 10px;
   max-width: 200px;
@@ -177,50 +143,26 @@ const PopupAddress = styled.p`
   font-size: 12px;
 `;
 
-const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = false }) => {
+const ScoutMap = ({ 
+  selectedPOITypes, 
+  viewState, 
+  setViewState, 
+  sharedMarkerPosition, 
+  setSharedMarkerPosition
+}) => {
   const { zoomLevel } = useContext(MapContext);
-  
-  const [viewState, setViewState] = useState({
-    longitude: KRIENS_COORDINATES.lng,
-    latitude: KRIENS_COORDINATES.lat,
-    zoom: zoomLevels.city // Default to city view of Kriens
-  });
-  
-  const [markerPosition, setMarkerPosition] = useState({
-    longitude: KRIENS_COORDINATES.lng,
-    latitude: KRIENS_COORDINATES.lat
-  });
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [locationName, setLocationName] = useState('Kriens, Switzerland');
   
-  // Isochrone state
-  const [showIsochroneControl, setShowIsochroneControl] = useState(true);
-  const [isochroneData, setIsochroneData] = useState(null);
-  const [isochroneParams, setIsochroneParams] = useState(null);
-  const [isochroneLoading, setIsochroneLoading] = useState(false);
-  const [isochroneError, setIsochroneError] = useState(null);
-  
   // POI state
   const [pois, setPois] = useState({});
   const [loadingPOIs, setLoadingPOIs] = useState(false);
   const [selectedPoi, setSelectedPoi] = useState(null);
-  const [poiIsochrones, setPoiIsochrones] = useState({});
-  const [generatingMultipleIsochrones, setGeneratingMultipleIsochrones] = useState(false);
   
   // Map style state
   const [mapStyle, setMapStyle] = useState(MAP_STYLES.color);
-  
-  // Update zoom level when it changes in context
-  useEffect(() => {
-    if (zoomLevel && zoomLevels[zoomLevel]) {
-      setViewState(prev => ({
-        ...prev,
-        zoom: zoomLevels[zoomLevel]
-      }));
-    }
-  }, [zoomLevel]);
   
   // Function to search for locations using Mapbox Geocoding API
   const searchLocations = useCallback(async (query) => {
@@ -268,7 +210,7 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
       zoom: 12
     });
     
-    setMarkerPosition({
+    setSharedMarkerPosition({
       longitude,
       latitude
     });
@@ -276,9 +218,6 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     setLocationName(result.place_name);
     setSearchResults([]);
     setSearchQuery('');
-    
-    // Clear existing isochrone when selecting a new location
-    setIsochroneData(null);
     
     // Fetch POIs for the selected location
     fetchPOIsForLocation({ lat: latitude, lng: longitude });
@@ -299,14 +238,14 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
   
   // Update POIs when selected types change
   useEffect(() => {
-    if (markerPosition && markerPosition.latitude) {
+    if (sharedMarkerPosition && sharedMarkerPosition.latitude) {
       const coords = {
-        lat: markerPosition.latitude,
-        lng: markerPosition.longitude
+        lat: sharedMarkerPosition.latitude,
+        lng: sharedMarkerPosition.longitude
       };
       fetchPOIsForLocation(coords);
     }
-  }, [selectedPOITypes, markerPosition]);
+  }, [selectedPOITypes, sharedMarkerPosition]);
 
   // Load Kriens POIs on component mount
   useEffect(() => {
@@ -317,218 +256,14 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     fetchPOIsForLocation(coords);
   }, []);
 
-  // Generate isochrone for current marker position
-  const handleGenerateIsochrone = async (params) => {
-    // Change map style to gray when generating isochrones
-    setMapStyle(MAP_STYLES.gray);
-    
-    // Are we generating for a single point (the pin) or for all POIs?
-    const generateForAllPOIs = params.generateForAllPOIs;
-    
-    if (generateForAllPOIs) {
-      await generateIsochronesForAllPOIs(params);
-      return;
-    }
-    
-    // Standard isochrone generation for the central pin
-    setIsochroneLoading(true);
-    setIsochroneError(null);
-    
-    try {
-      // Convert marker position to the format needed for the API
-      const coords = {
-        lng: markerPosition.longitude,
-        lat: markerPosition.latitude
-      };
-      
-      // Fetch isochrone data
-      const data = await fetchIsochrone(coords, params);
-      
-      // Store the data and parameters
-      setIsochroneData(data);
-      setIsochroneParams(params);
-      
-      return data;
-    } catch (error) {
-      console.error('Error generating isochrone:', error);
-      setIsochroneError(error.message || 'Failed to generate isochrone');
-      throw error;
-    } finally {
-      setIsochroneLoading(false);
-    }
-  };
-  
-  // Generate isochrones for all POIs
-  const generateIsochronesForAllPOIs = async (params) => {
-    setGeneratingMultipleIsochrones(true);
-    
-    try {
-      // Clear previous isochrones
-      setPoiIsochrones({});
-      
-      // Get all POIs as a flat array
-      const allPOIs = [];
-      Object.keys(pois).forEach(poiType => {
-        if (selectedPOITypes[poiType] && pois[poiType] && pois[poiType].length > 0) {
-          pois[poiType].forEach(poi => {
-            allPOIs.push({
-              id: `${poiType}-${poi.place_id}`,
-              poiType,
-              location: poi.geometry.location,
-              name: poi.name
-            });
-          });
-        }
-      });
-      
-      // Update the info label
-      setIsochroneParams({
-        ...params,
-        forAllPOIs: true,
-        poiCount: allPOIs.length
-      });
-      
-      // Generate isochrones for each POI (in batches to avoid overloading the API)
-      const batchSize = 5;
-      const newIsochrones = {};
-      
-      for (let i = 0; i < allPOIs.length; i += batchSize) {
-        const batch = allPOIs.slice(i, i + batchSize);
-        
-        // Process batch in parallel
-        const batchResults = await Promise.all(
-          batch.map(poi => 
-            fetchIsochrone(
-              { lng: poi.location.lng, lat: poi.location.lat }, 
-              params
-            )
-            .then(data => ({ id: poi.id, data, poiType: poi.poiType, name: poi.name }))
-            .catch(error => {
-              console.error(`Error generating isochrone for POI ${poi.id}:`, error);
-              return null;
-            })
-          )
-        );
-        
-        // Add successful isochrones to the collection
-        batchResults.forEach(result => {
-          if (result) {
-            newIsochrones[result.id] = {
-              data: result.data,
-              poiType: result.poiType,
-              name: result.name
-            };
-          }
-        });
-        
-        // Update state incrementally to show progress
-        setPoiIsochrones({...newIsochrones});
-      }
-      
-      // Clear the central isochrone since we're showing multiple now
-      setIsochroneData(null);
-      
-      return Object.values(newIsochrones).map(iso => iso.data);
-    } catch (error) {
-      console.error('Error generating isochrones for POIs:', error);
-      setIsochroneError(error.message || 'Failed to generate isochrones for POIs');
-      throw error;
-    } finally {
-      setGeneratingMultipleIsochrones(false);
-    }
-  };
-
-  // Create the layer style for the isochrone
-  const fillLayerStyle = useMemo(() => {
-    if (!isochroneParams) return {};
-
-    return {
-      id: 'isochrone-fill',
-      type: 'fill',
-      paint: {
-        'fill-color': [
-          'case',
-          ['has', 'contour'],
-          getFeatureColor({properties: {contour: isochroneParams.contourValue}}, isochroneParams.profile, isochroneParams.contourType),
-          'rgba(0, 0, 0, 0)'
-        ],
-        'fill-opacity': 0.35
-      }
-    };
-  }, [isochroneParams]);
-
-  // Create the outline style for the isochrone
-  const lineLayerStyle = useMemo(() => {
-    return {
-      id: 'isochrone-outline',
-      type: 'line',
-      paint: {
-        'line-color': '#000',
-        'line-width': 1,
-        'line-opacity': 0.5
-      }
-    };
-  }, []);
-  
-  // Get isochrone color based on POI type
-  const getIsochroneColor = (poiType, profile, contourType) => {
-    // Get the marker color for this POI type
-    const baseColor = getMarkerColor(poiType);
-    
-    // Convert hex to rgba with transparency
-    const r = parseInt(baseColor.slice(1, 3), 16);
-    const g = parseInt(baseColor.slice(3, 5), 16);
-    const b = parseInt(baseColor.slice(5, 7), 16);
-    
-    // Calculate opacity based on the number of POI isochrones
-    // More isochrones = lower opacity to prevent saturation
-    const isochroneCount = Object.keys(poiIsochrones).length;
-    // Scale opacity from 0.3 (few isochrones) down to 0.1 (many isochrones)
-    const opacity = Math.max(0.1, 0.3 - (isochroneCount > 50 ? 0.2 : isochroneCount / 250));
-    
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  };
-  
-  // Render all POI isochrones
-  const renderPoiIsochrones = () => {
-    return Object.keys(poiIsochrones).map(id => {
-      const { data, poiType } = poiIsochrones[id];
-      
-      return (
-        <Source key={`isochrone-${id}`} id={`isochrone-${id}`} type="geojson" data={data}>
-          <Layer
-            id={`isochrone-fill-${id}`}
-            type="fill"
-            paint={{
-              'fill-color': getIsochroneColor(poiType, isochroneParams?.profile, isochroneParams?.contourType),
-              'fill-opacity': 0.35
-            }}
-          />
-          <Layer
-            id={`isochrone-outline-${id}`}
-            type="line"
-            paint={{
-              'line-color': getMarkerColor(poiType),
-              'line-width': 1,
-              'line-opacity': 0.5
-            }}
-          />
-        </Source>
-      );
-    });
-  };
-
   // Handle map click to place marker
   const handleMapClick = useCallback((event) => {
     const { lngLat } = event;
     
-    setMarkerPosition({
+    setSharedMarkerPosition({
       longitude: lngLat.lng,
       latitude: lngLat.lat
     });
-    
-    // Clear existing isochrone when placing a new marker
-    setIsochroneData(null);
     
     // Reverse geocode to get location name
     axios.get(
@@ -624,21 +359,10 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     return markers;
   };
 
-  // Reset all overlays and isochrones
+  // Reset all overlays
   const handleReset = () => {
-    // Clear all isochrones
-    setIsochroneData(null);
-    setPoiIsochrones({});
-    setIsochroneParams(null);
-    setIsochroneError(null);
-    
-    // Change map style back to color
+    // Reset map style
     setMapStyle(MAP_STYLES.color);
-    
-    // Reset POIs if the resetPOIs function is provided
-    if (typeof resetPOIs === 'function') {
-      resetPOIs();
-    }
   };
 
   return (
@@ -664,22 +388,9 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
         )}
       </SearchContainer>
       
-      <ControlToggle onClick={() => setShowIsochroneControl(!showIsochroneControl)}>
-        {showIsochroneControl ? 'Hide MapMatch' : 'MapMatch'}
-      </ControlToggle>
-      
       <ResetButton onClick={handleReset}>
         Reset All
       </ResetButton>
-      
-      {showIsochroneControl && (
-        <IsochroneControlContainer>
-          <IsochroneControl 
-            onGenerateIsochrone={handleGenerateIsochrone}
-            hasSelectedPOIs={Object.keys(pois).some(type => selectedPOITypes[type] && pois[type]?.length > 0)}
-          />
-        </IsochroneControlContainer>
-      )}
       
       <Map
         {...viewState}
@@ -688,20 +399,25 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
         mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: '100%', height: '100%' }}
         onClick={handleMapClick}
+        onResize={(evt) => {
+          // When the map container resizes, trigger a resize event on the map
+          if (evt.target) {
+            evt.target.resize();
+          }
+        }}
       >
         <NavigationControl position="top-right" />
         
         <Marker 
-          longitude={markerPosition.longitude} 
-          latitude={markerPosition.latitude} 
+          longitude={sharedMarkerPosition.longitude} 
+          latitude={sharedMarkerPosition.latitude} 
           color="red"
           draggable={true}
           onDragStart={() => {
-            // Clear existing isochrone when starting to drag
-            setIsochroneData(null);
+            // Handle drag start
           }}
           onDrag={evt => {
-            setMarkerPosition({
+            setSharedMarkerPosition({
               longitude: evt.lngLat.lng,
               latitude: evt.lngLat.lat
             });
@@ -759,17 +475,6 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
             </StyledPopup>
           </Popup>
         )}
-
-        {/* Render standard isochrone (for the pin) */}
-        {isochroneData && (
-          <Source id="isochrone-data" type="geojson" data={isochroneData}>
-            <Layer {...fillLayerStyle} />
-            <Layer {...lineLayerStyle} />
-          </Source>
-        )}
-        
-        {/* Render isochrones for POIs */}
-        {renderPoiIsochrones()}
       </Map>
       
       <LocationLabel>
@@ -781,37 +486,8 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
           Loading points of interest...
         </InfoOverlay>
       )}
-      
-      {generatingMultipleIsochrones && (
-        <InfoOverlay>
-          Generating MapMatch for {Object.keys(poiIsochrones).length} / {isochroneParams?.poiCount || '?'} POIs...
-        </InfoOverlay>
-      )}
-      
-      {isochroneParams && isochroneData && (
-        <InfoOverlay>
-          {isochroneParams.profile.charAt(0).toUpperCase() + isochroneParams.profile.slice(1)} {' '}
-          {isochroneParams.contourType === 'minutes' ? 'time' : 'distance'}: {' '}
-          {isochroneParams.contourValue} {isochroneParams.contourType === 'minutes' ? 'min' : 'm'}
-        </InfoOverlay>
-      )}
-      
-      {isochroneParams && isochroneParams.forAllPOIs && Object.keys(poiIsochrones).length > 0 && (
-        <InfoOverlay>
-          MapMatch for {Object.keys(poiIsochrones).length} POIs: {' '}
-          {isochroneParams.profile} {' '}
-          {isochroneParams.contourType === 'minutes' ? 'time' : 'distance'}: {' '}
-          {isochroneParams.contourValue} {isochroneParams.contourType === 'minutes' ? 'min' : 'm'}
-        </InfoOverlay>
-      )}
-      
-      {isochroneError && (
-        <InfoOverlay style={{ backgroundColor: '#ffebee', color: '#d32f2f' }}>
-          Error: {isochroneError}
-        </InfoOverlay>
-      )}
     </div>
   );
 };
 
-export default ReactMapGLComponent; 
+export default ScoutMap; 
