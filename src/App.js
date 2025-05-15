@@ -19,14 +19,28 @@ const AppContainer = styled.div`
 const MainContent = styled.div`
   display: flex;
   flex: 1;
+  position: relative;
+  height: calc(100vh - 60px);
   overflow: hidden;
+`;
+
+const SidebarWrapper = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  z-index: 10;
+  height: 100%;
+  overflow: hidden;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 `;
 
 const MapContainer = styled.div`
   flex: 1;
   position: relative;
-  height: calc(100vh - 60px);
-  min-height: 500px; /* Ensure minimum height */
+  height: 100%;
+  width: 100%;
   overflow: hidden;
 `;
 
@@ -118,15 +132,17 @@ function AppContent() {
       <Header toggleSidebar={toggleSidebar} />
       <MainContent>
         {showSidebar && (
-          <Sidebar 
-            selectedPOITypes={selectedPOITypes} 
-            togglePOIType={togglePOIType}
-            toggleAllSupermarkets={toggleAllSupermarkets}
-            toggleAllTransport={toggleAllTransport}
-            zoomLevel={zoomLevel}
-            changeZoomLevel={changeZoomLevel}
-            showProperties={showProperties} // Pass the property to hide the properties section
-          />
+          <SidebarWrapper>
+            <Sidebar 
+              selectedPOITypes={selectedPOITypes} 
+              togglePOIType={togglePOIType}
+              toggleAllSupermarkets={toggleAllSupermarkets}
+              toggleAllTransport={toggleAllTransport}
+              zoomLevel={zoomLevel}
+              changeZoomLevel={changeZoomLevel}
+              showProperties={showProperties} // Pass the property to hide the properties section
+            />
+          </SidebarWrapper>
         )}
         <MapContainer>
           {mapComponent === 'reactmapgl' && <ReactMapGLComponent 

@@ -43,11 +43,22 @@ const zoomLevels = {
   max: 20
 };
 
+const MapContainer = styled.div`
+  position: fixed;
+  top: 60px; /* Adjust to account for header height */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(100vh - 60px);
+  z-index: 1;
+`;
+
 const SearchContainer = styled.div`
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 1;
+  z-index: 3;
   width: 250px;
 `;
 
@@ -93,6 +104,7 @@ const LocationLabel = styled.div`
   border-radius: 4px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   font-weight: bold;
+  z-index: 2;
 `;
 
 const InfoOverlay = styled.div`
@@ -105,7 +117,7 @@ const InfoOverlay = styled.div`
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   font-size: 13px;
   max-width: 250px;
-  z-index: 1;
+  z-index: 2;
 `;
 
 const ControlToggle = styled.button`
@@ -119,7 +131,7 @@ const ControlToggle = styled.button`
   font-size: 13px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   align-items: center;
   
@@ -130,8 +142,8 @@ const ControlToggle = styled.button`
 
 const ResetButton = styled.button`
   position: absolute;
-  top: 50px;
-  right: 60px;
+  top: 10px;
+  right: 180px;
   background: white;
   border: none;
   border-radius: 4px;
@@ -139,7 +151,7 @@ const ResetButton = styled.button`
   font-size: 13px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   align-items: center;
   
@@ -152,7 +164,7 @@ const IsochroneControlContainer = styled.div`
   position: absolute;
   top: 48px;
   right: 60px;
-  z-index: 1;
+  z-index: 3;
   background: white;
   border-radius: 4px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -642,7 +654,7 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
   };
 
   return (
-    <div style={{ height: '100%', position: 'relative' }}>
+    <MapContainer>
       <SearchContainer>
         <SearchInput
           type="text"
@@ -810,7 +822,7 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
           Error: {isochroneError}
         </InfoOverlay>
       )}
-    </div>
+    </MapContainer>
   );
 };
 
