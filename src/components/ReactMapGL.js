@@ -11,6 +11,12 @@ import { fetchAllPOIs } from '../services/placesService';
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoianVsaWVuc3RvY2tlciIsImEiOiJjbWFvYWhqMXAwNW9vMmpyMGtmNjBqYzZoIn0.MDBDP08GAAF2SuXeAN3yuw';
 
+// Map styles
+const MAP_STYLES = {
+  color: "mapbox://styles/mapbox/streets-v11",
+  gray: "mapbox://styles/mapbox/light-v11"
+};
+
 // Switzerland coordinates (centered on the country)
 const SWITZERLAND_COORDINATES = {
   lng: 8.2275,
@@ -203,6 +209,9 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
   const [poiIsochrones, setPoiIsochrones] = useState({});
   const [generatingMultipleIsochrones, setGeneratingMultipleIsochrones] = useState(false);
   
+  // Map style state
+  const [mapStyle, setMapStyle] = useState(MAP_STYLES.color);
+  
   // Update zoom level when it changes in context
   useEffect(() => {
     if (zoomLevel && zoomLevels[zoomLevel]) {
@@ -310,6 +319,9 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
 
   // Generate isochrone for current marker position
   const handleGenerateIsochrone = async (params) => {
+    // Change map style to gray when generating isochrones
+    setMapStyle(MAP_STYLES.gray);
+    
     // Are we generating for a single point (the pin) or for all POIs?
     const generateForAllPOIs = params.generateForAllPOIs;
     
@@ -468,7 +480,13 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
     const g = parseInt(baseColor.slice(3, 5), 16);
     const b = parseInt(baseColor.slice(5, 7), 16);
     
-    return `rgba(${r}, ${g}, ${b}, 0.3)`;
+    // Calculate opacity based on the number of POI isochrones
+    // More isochrones = lower opacity to prevent saturation
+    const isochroneCount = Object.keys(poiIsochrones).length;
+    // Scale opacity from 0.3 (few isochrones) down to 0.1 (many isochrones)
+    const opacity = Math.max(0.1, 0.3 - (isochroneCount > 50 ? 0.2 : isochroneCount / 250));
+    
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
   
   // Render all POI isochrones
@@ -492,7 +510,7 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
             paint={{
               'line-color': getMarkerColor(poiType),
               'line-width': 1,
-              'line-opacity': 0.7
+              'line-opacity': 0.5
             }}
           />
         </Source>
@@ -604,6 +622,9 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
     setIsochroneParams(null);
     setIsochroneError(null);
     
+    // Change map style back to color
+    setMapStyle(MAP_STYLES.color);
+    
     // Reset POIs if the resetPOIs function is provided
     if (typeof resetPOIs === 'function') {
       resetPOIs();
@@ -653,7 +674,7 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs }) => {
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
-        mapStyle="mapbox://styles/mapbox/streets-v11"
+        mapStyle={mapStyle}
         mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: '100%', height: '100%' }}
         onClick={handleMapClick}
