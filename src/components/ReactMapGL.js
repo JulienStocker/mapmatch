@@ -17,6 +17,12 @@ const SWITZERLAND_COORDINATES = {
   lat: 46.8182
 };
 
+// Kriens coordinates
+const KRIENS_COORDINATES = {
+  lng: 8.3156,
+  lat: 47.0331
+};
+
 // Zoom level mappings - keep in sync with other components
 const zoomLevels = {
   world: 1,
@@ -136,19 +142,19 @@ const ReactMapGLComponent = ({ selectedPOITypes }) => {
   const { zoomLevel } = useContext(MapContext);
   
   const [viewState, setViewState] = useState({
-    longitude: SWITZERLAND_COORDINATES.lng,
-    latitude: SWITZERLAND_COORDINATES.lat,
-    zoom: zoomLevels.country // Default to country view of Switzerland
+    longitude: KRIENS_COORDINATES.lng,
+    latitude: KRIENS_COORDINATES.lat,
+    zoom: zoomLevels.city // Default to city view of Kriens
   });
   
   const [markerPosition, setMarkerPosition] = useState({
-    longitude: SWITZERLAND_COORDINATES.lng,
-    latitude: SWITZERLAND_COORDINATES.lat
+    longitude: KRIENS_COORDINATES.lng,
+    latitude: KRIENS_COORDINATES.lat
   });
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [locationName, setLocationName] = useState('Switzerland');
+  const [locationName, setLocationName] = useState('Kriens, Switzerland');
   
   // Isochrone state
   const [showIsochroneControl, setShowIsochroneControl] = useState(true);
@@ -257,6 +263,15 @@ const ReactMapGLComponent = ({ selectedPOITypes }) => {
       fetchPOIsForLocation(coords);
     }
   }, [selectedPOITypes, markerPosition]);
+
+  // Load Kriens POIs on component mount
+  useEffect(() => {
+    const coords = {
+      lat: KRIENS_COORDINATES.lat,
+      lng: KRIENS_COORDINATES.lng
+    };
+    fetchPOIsForLocation(coords);
+  }, []);
 
   // Generate isochrone for current marker position
   const handleGenerateIsochrone = async (params) => {
@@ -374,6 +389,10 @@ const ReactMapGLComponent = ({ selectedPOITypes }) => {
         return '#e84393'; // Pink
       case 'spar':
         return '#2ed573'; // Light green
+      case 'trainStation':
+        return '#3498db'; // Bright blue
+      case 'busStop':
+        return '#f1c40f'; // Yellow
       default:
         return '#2d3436'; // Dark grey
     }

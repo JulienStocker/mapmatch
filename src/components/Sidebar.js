@@ -159,10 +159,11 @@ const getZoomName = (value) => {
   return 'Maximum';
 };
 
-const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, zoomLevel, changeZoomLevel }) => {
+const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggleAllTransport, zoomLevel, changeZoomLevel }) => {
   const { properties, selectProperty, selectedProperty } = useContext(MapContext);
   const [sliderValue, setSliderValue] = useState(zoomLevelMap[zoomLevel] || 10);
   const [supermarketsExpanded, setSupermarketsExpanded] = useState(false);
+  const [transportExpanded, setTransportExpanded] = useState(false);
   
   // Check if all supermarkets are selected
   const allSupermarketsSelected = 
@@ -181,10 +182,25 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, zoomL
     selectedPOITypes.lidl || 
     selectedPOITypes.denner || 
     selectedPOITypes.spar;
+    
+  // Check if all transport options are selected
+  const allTransportSelected = 
+    selectedPOITypes.trainStation && 
+    selectedPOITypes.busStop;
+    
+  // Check if any transport option is selected
+  const anyTransportSelected = 
+    selectedPOITypes.trainStation || 
+    selectedPOITypes.busStop;
   
   // Handle the supermarket parent checkbox click
   const handleSupermarketToggle = () => {
     toggleAllSupermarkets(!allSupermarketsSelected);
+  };
+  
+  // Handle the transport parent checkbox click
+  const handleTransportToggle = () => {
+    toggleAllTransport(!allTransportSelected);
   };
   
   // Update slider value when zoomLevel prop changes
@@ -347,6 +363,50 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, zoomL
                   onChange={() => togglePOIType('spar')} 
                 />
                 Spar
+              </CheckboxLabel>
+            </NestedCheckboxGroup>
+          )}
+          
+          {/* Public Transportation parent checkbox */}
+          <CheckboxLabel>
+            <input 
+              type="checkbox" 
+              checked={allTransportSelected}
+              onChange={handleTransportToggle}
+              indeterminate={anyTransportSelected && !allTransportSelected}
+              ref={el => {
+                if (el) {
+                  el.indeterminate = anyTransportSelected && !allTransportSelected;
+                }
+              }}
+            />
+            Public Transportation
+            <span 
+              style={{ marginLeft: '5px', cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => setTransportExpanded(!transportExpanded)}
+            >
+              {transportExpanded ? '▼' : '►'}
+            </span>
+          </CheckboxLabel>
+          
+          {/* Nested transportation options */}
+          {transportExpanded && (
+            <NestedCheckboxGroup>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.trainStation} 
+                  onChange={() => togglePOIType('trainStation')} 
+                />
+                Train Station
+              </CheckboxLabel>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.busStop} 
+                  onChange={() => togglePOIType('busStop')} 
+                />
+                Bus Stop
               </CheckboxLabel>
             </NestedCheckboxGroup>
           )}

@@ -40,7 +40,9 @@ function AppContent() {
     aldi: true,
     lidl: true,
     denner: true,
-    spar: true
+    spar: true,
+    trainStation: true,
+    busStop: true
   });
   
   // Use ReactMapGL component by default
@@ -70,6 +72,15 @@ function AppContent() {
     });
   };
   
+  // Toggle all public transport at once
+  const toggleAllTransport = (value) => {
+    setSelectedPOITypes({
+      ...selectedPOITypes,
+      trainStation: value,
+      busStop: value
+    });
+  };
+  
   // Debug log the container dimensions
   useEffect(() => {
     const mapContainer = document.querySelector('.map-container');
@@ -93,6 +104,7 @@ function AppContent() {
             selectedPOITypes={selectedPOITypes} 
             togglePOIType={togglePOIType}
             toggleAllSupermarkets={toggleAllSupermarkets}
+            toggleAllTransport={toggleAllTransport}
             zoomLevel={zoomLevel}
             changeZoomLevel={changeZoomLevel}
           />
