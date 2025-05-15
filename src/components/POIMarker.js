@@ -52,6 +52,12 @@ const POIMarker = ({ poi, type }) => {
     case 'lidl':
       iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724888.png';
       break;
+    case 'denner':
+      iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724888.png';
+      break;
+    case 'spar':
+      iconUrl = 'https://cdn-icons-png.flaticon.com/512/3724/3724888.png';
+      break;
     case 'hospitals':
       iconUrl = 'https://cdn-icons-png.flaticon.com/512/3158/3158267.png';
       break;
@@ -73,6 +79,12 @@ const POIMarker = ({ poi, type }) => {
       break;
     case 'lidl':
       typeDisplayName = 'Lidl';
+      break;
+    case 'denner':
+      typeDisplayName = 'Denner';
+      break;
+    case 'spar':
+      typeDisplayName = 'Spar';
       break;
     case 'hospitals':
       typeDisplayName = 'Hospital';

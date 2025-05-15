@@ -370,6 +370,10 @@ const ReactMapGLComponent = ({ selectedPOITypes }) => {
         return '#00b894'; // Green
       case 'lidl':
         return '#6c5ce7'; // Purple
+      case 'denner':
+        return '#e84393'; // Pink
+      case 'spar':
+        return '#2ed573'; // Light green
       default:
         return '#2d3436'; // Dark grey
     }

@@ -123,6 +123,20 @@ export const fetchAllPOIs = async (coords, selectedTypes, radius = 5000) => {
     );
   }
 
+  if (selectedTypes.denner) {
+    fetchPromises.push(
+      fetchRetailChain(coords, 'Denner', radius)
+        .then(data => { result.denner = data; })
+    );
+  }
+
+  if (selectedTypes.spar) {
+    fetchPromises.push(
+      fetchRetailChain(coords, 'Spar', radius)
+        .then(data => { result.spar = data; })
+    );
+  }
+
   // Wait for all selected POI types to be fetched
   await Promise.all(fetchPromises);
   return result;
@@ -209,7 +223,9 @@ export const getPlaceTypeDisplayName = (type) => {
     'migros': 'Migros',
     'coop': 'Coop',
     'aldi': 'Aldi',
-    'lidl': 'Lidl'
+    'lidl': 'Lidl',
+    'denner': 'Denner',
+    'spar': 'Spar'
   };
   
   return displayNames[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

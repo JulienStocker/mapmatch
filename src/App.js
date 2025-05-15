@@ -38,7 +38,9 @@ function AppContent() {
     migros: true,
     coop: true,
     aldi: true,
-    lidl: true
+    lidl: true,
+    denner: true,
+    spar: true
   });
   
   // Use ReactMapGL component by default
@@ -48,10 +50,23 @@ function AppContent() {
     setShowSidebar(!showSidebar);
   };
 
-  const togglePOIType = (type) => {
+  const togglePOIType = (type, value) => {
     setSelectedPOITypes({
       ...selectedPOITypes,
-      [type]: !selectedPOITypes[type]
+      [type]: value !== undefined ? value : !selectedPOITypes[type]
+    });
+  };
+  
+  // Toggle all supermarkets at once with a single state update
+  const toggleAllSupermarkets = (value) => {
+    setSelectedPOITypes({
+      ...selectedPOITypes,
+      migros: value,
+      coop: value,
+      aldi: value,
+      lidl: value,
+      denner: value,
+      spar: value
     });
   };
   
@@ -77,6 +92,7 @@ function AppContent() {
           <Sidebar 
             selectedPOITypes={selectedPOITypes} 
             togglePOIType={togglePOIType}
+            toggleAllSupermarkets={toggleAllSupermarkets}
             zoomLevel={zoomLevel}
             changeZoomLevel={changeZoomLevel}
           />

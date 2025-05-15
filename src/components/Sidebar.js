@@ -122,6 +122,14 @@ const PropertiesContainer = styled.div`
   overflow-y: auto;
 `;
 
+const NestedCheckboxGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-left: 25px;
+  margin-top: 5px;
+`;
+
 // Zoom level mappings
 const zoomLevelMap = {
   world: 1,
@@ -151,9 +159,33 @@ const getZoomName = (value) => {
   return 'Maximum';
 };
 
-const Sidebar = ({ selectedPOITypes, togglePOIType, zoomLevel, changeZoomLevel }) => {
+const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, zoomLevel, changeZoomLevel }) => {
   const { properties, selectProperty, selectedProperty } = useContext(MapContext);
   const [sliderValue, setSliderValue] = useState(zoomLevelMap[zoomLevel] || 10);
+  const [supermarketsExpanded, setSupermarketsExpanded] = useState(false);
+  
+  // Check if all supermarkets are selected
+  const allSupermarketsSelected = 
+    selectedPOITypes.migros && 
+    selectedPOITypes.coop && 
+    selectedPOITypes.aldi && 
+    selectedPOITypes.lidl && 
+    selectedPOITypes.denner && 
+    selectedPOITypes.spar;
+  
+  // Check if any supermarket is selected
+  const anySupermarketSelected = 
+    selectedPOITypes.migros || 
+    selectedPOITypes.coop || 
+    selectedPOITypes.aldi || 
+    selectedPOITypes.lidl || 
+    selectedPOITypes.denner || 
+    selectedPOITypes.spar;
+  
+  // Handle the supermarket parent checkbox click
+  const handleSupermarketToggle = () => {
+    toggleAllSupermarkets(!allSupermarketsSelected);
+  };
   
   // Update slider value when zoomLevel prop changes
   useEffect(() => {
@@ -242,38 +274,82 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, zoomLevel, changeZoomLevel }
             />
             Hospitals
           </CheckboxLabel>
+          
+          {/* Supermarkets parent checkbox */}
           <CheckboxLabel>
             <input 
               type="checkbox" 
-              checked={selectedPOITypes.migros} 
-              onChange={() => togglePOIType('migros')} 
+              checked={allSupermarketsSelected}
+              onChange={handleSupermarketToggle}
+              indeterminate={anySupermarketSelected && !allSupermarketsSelected}
+              ref={el => {
+                if (el) {
+                  el.indeterminate = anySupermarketSelected && !allSupermarketsSelected;
+                }
+              }}
             />
-            Migros
+            Supermarkets
+            <span 
+              style={{ marginLeft: '5px', cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => setSupermarketsExpanded(!supermarketsExpanded)}
+            >
+              {supermarketsExpanded ? '▼' : '►'}
+            </span>
           </CheckboxLabel>
-          <CheckboxLabel>
-            <input 
-              type="checkbox" 
-              checked={selectedPOITypes.coop} 
-              onChange={() => togglePOIType('coop')} 
-            />
-            Coop
-          </CheckboxLabel>
-          <CheckboxLabel>
-            <input 
-              type="checkbox" 
-              checked={selectedPOITypes.aldi} 
-              onChange={() => togglePOIType('aldi')} 
-            />
-            Aldi
-          </CheckboxLabel>
-          <CheckboxLabel>
-            <input 
-              type="checkbox" 
-              checked={selectedPOITypes.lidl} 
-              onChange={() => togglePOIType('lidl')} 
-            />
-            Lidl
-          </CheckboxLabel>
+          
+          {/* Nested supermarket options */}
+          {supermarketsExpanded && (
+            <NestedCheckboxGroup>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.migros} 
+                  onChange={() => togglePOIType('migros')} 
+                />
+                Migros
+              </CheckboxLabel>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.coop} 
+                  onChange={() => togglePOIType('coop')} 
+                />
+                Coop
+              </CheckboxLabel>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.aldi} 
+                  onChange={() => togglePOIType('aldi')} 
+                />
+                Aldi
+              </CheckboxLabel>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.lidl} 
+                  onChange={() => togglePOIType('lidl')} 
+                />
+                Lidl
+              </CheckboxLabel>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.denner} 
+                  onChange={() => togglePOIType('denner')} 
+                />
+                Denner
+              </CheckboxLabel>
+              <CheckboxLabel>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPOITypes.spar} 
+                  onChange={() => togglePOIType('spar')} 
+                />
+                Spar
+              </CheckboxLabel>
+            </NestedCheckboxGroup>
+          )}
         </CheckboxGroup>
       </SidebarSection>
       
