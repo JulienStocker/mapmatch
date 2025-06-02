@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { MapProvider, MapContext } from './contexts/MapContext';
+import { CSVProvider } from './contexts/CSVContext';
 import Header from './components/Header';
 import MapView from './components/MapView';
 import SimpleMap from './components/SimpleMap';
@@ -182,7 +183,9 @@ function AppContent() {
 function App() {
   return (
     <MapProvider>
-      <AppContent />
+      <CSVProvider>
+        <AppContent />
+      </CSVProvider>
     </MapProvider>
   );
 }

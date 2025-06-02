@@ -77,32 +77,27 @@ const ScoutSidebar = () => {
     comparis: 'idle'
   });
 
-  // Run script for a specific source
-  const runScript = (source) => {
-    // Set status to running
-    setSourcesStatus({
-      ...sourcesStatus,
-      [source]: 'running'
-    });
+  // Website URLs for each source
+  const sourceUrls = {
+    homegate: "https://www.homegate.ch",
+    immoscout24: "https://www.immoscout24.ch",
+    comparis: "https://en.comparis.ch/immobilien/default"
+  };
 
-    // Simulate script running
-    setTimeout(() => {
-      // Set status to complete after a simulated delay
-      setSourcesStatus({
-        ...sourcesStatus,
-        [source]: 'complete'
-      });
-      
-      // For a real implementation, this would call APIs or run the actual script
-      console.log(`Running script for ${source}`);
-    }, 2000);
+  // Open website for a specific source
+  const openWebsite = (source) => {
+    // Open the website in a new tab
+    window.open(sourceUrls[source], '_blank');
+    
+    // For a real implementation, this would also track that the site was visited
+    console.log(`Opening website for ${source}`);
   };
 
   return (
     <SidebarContainer>
       <SidebarSection>
         <SectionTitle>Scout Settings</SectionTitle>
-        <p>Select a source and click Run to fetch property data.</p>
+        <p>Select a source and click Open to visit the property website.</p>
       </SidebarSection>
       
       <SidebarSection>
@@ -114,10 +109,9 @@ const ScoutSidebar = () => {
             Homegate
           </SourceName>
           <RunButton 
-            onClick={() => runScript('homegate')}
-            disabled={sourcesStatus.homegate === 'running'}
+            onClick={() => openWebsite('homegate')}
           >
-            {sourcesStatus.homegate === 'running' ? 'Running...' : 'Run'}
+            Open
           </RunButton>
         </SourceItem>
         
@@ -127,10 +121,9 @@ const ScoutSidebar = () => {
             Immoscout24
           </SourceName>
           <RunButton 
-            onClick={() => runScript('immoscout24')}
-            disabled={sourcesStatus.immoscout24 === 'running'}
+            onClick={() => openWebsite('immoscout24')}
           >
-            {sourcesStatus.immoscout24 === 'running' ? 'Running...' : 'Run'}
+            Open
           </RunButton>
         </SourceItem>
         
@@ -140,19 +133,19 @@ const ScoutSidebar = () => {
             Comparis
           </SourceName>
           <RunButton 
-            onClick={() => runScript('comparis')}
-            disabled={sourcesStatus.comparis === 'running'}
+            onClick={() => openWebsite('comparis')}
           >
-            {sourcesStatus.comparis === 'running' ? 'Running...' : 'Run'}
+            Open
           </RunButton>
         </SourceItem>
       </SidebarSection>
       
       <SidebarSection>
         <SectionTitle>Instructions</SectionTitle>
-        <p>1. Click the Run button next to a source to fetch data</p>
+        <p>1. Click the Open button next to a source to visit the website</p>
         <p>2. Review and edit the data in the CSV viewer</p>
-        <p>3. Use the Export button to save as CSV file</p>
+        <p>3. Use the Import button to load data from a CSV file</p>
+        <p>4. Use the Export button to save as CSV file</p>
       </SidebarSection>
     </SidebarContainer>
   );

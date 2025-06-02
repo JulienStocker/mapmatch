@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import styled from 'styled-components';
+import { CSVContext } from '../contexts/CSVContext';
 
 const CSVContainer = styled.div`
   width: 100%;
@@ -50,9 +51,10 @@ const ButtonBar = styled.div`
   display: flex;
   justify-content: space-between;
   padding: 10px 0;
+  gap: 10px;
 `;
 
-const ExportButton = styled.button`
+const Button = styled.button`
   background-color: #2c3e50;
   color: white;
   border: none;
@@ -66,18 +68,25 @@ const ExportButton = styled.button`
   }
 `;
 
-// Initial columns for the CSV
-const initialColumns = ['Address', 'Price', 'Rooms', 'Area', 'Latitude', 'Longitude', 'URL', 'Notes'];
+const ImportButton = styled(Button)`
+  background-color: #3498db;
+  
+  &:hover {
+    background-color: #2980b9;
+  }
+`;
+
+const HiddenInput = styled.input`
+  display: none;
+`;
 
 const ScoutCSV = () => {
-  const [csvData, setCsvData] = useState([
-    // Empty initial data with one blank row
-    Array(initialColumns.length).fill('')
-  ]);
+  const { csvData, setCsvData, columns, setColumns } = useContext(CSVContext);
+  const fileInputRef = useRef(null);
   
   // Export CSV function
   const exportCSV = () => {
-    const header = initialColumns.join(',');
+    const header = columns.join(',');
     const rows = csvData.map(row => row.join(','));
     const csv = [header, ...rows].join('\n');
     
@@ -93,18 +102,76 @@ const ScoutCSV = () => {
     document.body.removeChild(a);
   };
 
+  // Import CSV function
+  const importCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const lines = text.split('\n');
+      
+      if (lines.length > 0) {
+        // Parse the header row to get column names
+        const headerRow = lines[0].split(',');
+        setColumns(headerRow);
+        
+        // Parse data rows
+        const parsedData = [];
+        for (let i = 1; i < lines.length; i++) {
+          if (lines[i].trim() !== '') {
+            const row = lines[i].split(',');
+            
+            // Ensure each row has the same number of columns as the header
+            while (row.length < headerRow.length) {
+              row.push('');
+            }
+            
+            parsedData.push(row);
+          }
+        }
+        
+        // Add an empty row at the end for new entries
+        parsedData.push(Array(headerRow.length).fill(''));
+        
+        setCsvData(parsedData);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset the file input to allow re-importing the same file
+    event.target.value = '';
+  };
+
+  // Trigger file input click
+  const handleImportClick = () => {
+    fileInputRef.current.click();
+  };
+
   return (
     <CSVContainer>
       <ButtonBar>
-        <ExportButton onClick={exportCSV}>
-          Export CSV
-        </ExportButton>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <ImportButton onClick={handleImportClick}>
+            Import CSV
+          </ImportButton>
+          <HiddenInput 
+            type="file" 
+            ref={fileInputRef} 
+            accept=".csv" 
+            onChange={importCSV}
+          />
+          <Button onClick={exportCSV}>
+            Export CSV
+          </Button>
+        </div>
       </ButtonBar>
       <CSVTable>
         <Table>
           <THead>
             <TR>
-              {initialColumns.map((column, index) => (
+              {columns.map((column, index) => (
                 <TH key={index}>{column}</TH>
               ))}
             </TR>
@@ -130,7 +197,7 @@ const ScoutCSV = () => {
                         
                         // Add a new row if we're editing the last row
                         if (rowIndex === csvData.length - 1) {
-                          setCsvData([...newData, Array(initialColumns.length).fill('')]);
+                          setCsvData([...newData, Array(columns.length).fill('')]);
                         }
                       }}
                     />

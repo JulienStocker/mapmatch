@@ -190,7 +190,7 @@ const PopupAddress = styled.p`
 `;
 
 const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = false }) => {
-  const { zoomLevel } = useContext(MapContext);
+  const { zoomLevel, mapCenter, mapZoom } = useContext(MapContext);
   
   const [viewState, setViewState] = useState({
     longitude: KRIENS_COORDINATES.lng,
@@ -235,6 +235,55 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
       }));
     }
   }, [zoomLevel]);
+  
+  // Sync with mapCenter and mapZoom from MapContext
+  useEffect(() => {
+    if (mapCenter && mapCenter.lat && mapCenter.lng) {
+      console.log('Updating map from MapContext:', mapCenter, mapZoom);
+      setViewState({
+        longitude: mapCenter.lng,
+        latitude: mapCenter.lat,
+        zoom: mapZoom
+      });
+      
+      // Also update marker position
+      setMarkerPosition({
+        longitude: mapCenter.lng,
+        latitude: mapCenter.lat
+      });
+      
+      // Fetch location name and POIs for the new position
+      axios.get(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${mapCenter.lng},${mapCenter.lat}.json`,
+        {
+          params: {
+            access_token: MAPBOX_TOKEN,
+            limit: 1
+          }
+        }
+      )
+      .then(response => {
+        if (response.data.features.length > 0) {
+          setLocationName(response.data.features[0].place_name);
+          
+          // Extract zip code if available
+          const extractedZipCode = extractZipCode(response.data.features);
+          if (extractedZipCode) {
+            setZipCode(extractedZipCode);
+          }
+        } else {
+          setLocationName(`${mapCenter.lat.toFixed(4)}, ${mapCenter.lng.toFixed(4)}`);
+        }
+        
+        // Fetch POIs for the new position
+        fetchPOIsForLocation({ lat: mapCenter.lat, lng: mapCenter.lng });
+      })
+      .catch(error => {
+        console.error('Error reverse geocoding:', error);
+        setLocationName(`${mapCenter.lat.toFixed(4)}, ${mapCenter.lng.toFixed(4)}`);
+      });
+    }
+  }, [mapCenter, mapZoom]);
   
   // Function to search for locations using Mapbox Geocoding API
   const searchLocations = useCallback(async (query) => {
