@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { MapContext } from '../contexts/MapContext';
+import { CSVContext } from '../contexts/CSVContext';
 import PropertyCard from './PropertyCard';
 import mapboxgl from 'mapbox-gl';
 
@@ -204,6 +205,29 @@ const SearchForm = styled.div`
   position: relative;
 `;
 
+const ScoutButton = styled.button`
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: #219653;
+  }
+  
+  svg {
+    margin-right: 8px;
+  }
+`;
+
 // Zoom level mappings
 const zoomLevelMap = {
   world: 1,
@@ -234,7 +258,8 @@ const getZoomName = (value) => {
 };
 
 const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggleAllTransport, zoomLevel, changeZoomLevel, showProperties = true }) => {
-  const { properties, selectProperty, selectedProperty, setMapView } = useContext(MapContext);
+  const { properties, selectProperty, selectedProperty, setMapView, setProperties } = useContext(MapContext);
+  const { csvData, columns, extractCoordsFromMapsUrl } = useContext(CSVContext);
   const [sliderValue, setSliderValue] = useState(zoomLevelMap[zoomLevel] || 10);
   const [supermarketsExpanded, setSupermarketsExpanded] = useState(false);
   const [transportExpanded, setTransportExpanded] = useState(false);
@@ -404,6 +429,110 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggl
     setResults([]);
     setShowResults(false);
     setError(null);
+  };
+
+  // Populate pins function moved from ScoutCSV
+  const populatePins = () => {
+    // Filter out empty rows and the header
+    const validData = csvData.filter(row => row.some(cell => cell.trim() !== ''));
+    
+    if (validData.length === 0) {
+      alert("No data to populate pins from. Please add data in the Scout tab first.");
+      return;
+    }
+    
+    console.log("CSV Data to process:", validData);
+    console.log("Columns:", columns);
+    
+    // Find column indices for required fields
+    const latIndex = columns.findIndex(col => 
+      col.toLowerCase().includes('lat') || col.toLowerCase() === 'latitude');
+    const lngIndex = columns.findIndex(col => 
+      col.toLowerCase().includes('lng') || col.toLowerCase().includes('lon') || 
+      col.toLowerCase() === 'longitude');
+    const addressIndex = columns.findIndex(col => 
+      col.toLowerCase().includes('address'));
+    const priceIndex = columns.findIndex(col => 
+      col.toLowerCase().includes('price'));
+    const urlIndex = columns.findIndex(col => 
+      col.toLowerCase().includes('url') || 
+      col.toLowerCase().includes('link') || 
+      col.toLowerCase().includes('maps'));
+    
+    console.log("Column indices found:", {
+      latIndex,
+      lngIndex,
+      addressIndex,
+      priceIndex,
+      urlIndex
+    });
+    
+    // Create property objects from the CSV data
+    const properties = validData.map((row, index) => {
+      let lat, lng;
+      
+      console.log(`Processing row ${index}:`, row);
+      
+      // First try to get coordinates from dedicated lat/lng columns
+      if (latIndex !== -1 && lngIndex !== -1) {
+        lat = parseFloat(row[latIndex]);
+        lng = parseFloat(row[lngIndex]);
+        console.log(`Extracted coordinates from dedicated columns: ${lat}, ${lng}`);
+      }
+      
+      // If lat/lng columns don't exist or contain invalid data, try to extract from URL
+      if ((isNaN(lat) || isNaN(lng)) && urlIndex !== -1) {
+        const url = row[urlIndex];
+        console.log(`Trying to extract coordinates from URL: ${url}`);
+        const coords = extractCoordsFromMapsUrl(url);
+        
+        if (coords) {
+          lat = coords.lat;
+          lng = coords.lng;
+          console.log(`Successfully extracted coordinates from URL: ${lat}, ${lng}`);
+        } else {
+          console.log(`Failed to extract coordinates from URL: ${url}`);
+        }
+      }
+      
+      // Skip rows with invalid coordinates
+      if (isNaN(lat) || isNaN(lng) || 
+          lat < -90 || lat > 90 || 
+          lng < -180 || lng > 180) {
+        console.log(`Skipping row ${index} due to invalid coordinates: ${lat}, ${lng}`);
+        return null;
+      }
+      
+      const property = {
+        id: `csv-property-${index}`,
+        title: addressIndex !== -1 ? row[addressIndex] : `Property ${index + 1}`,
+        price: priceIndex !== -1 ? row[priceIndex] : 'N/A',
+        type: 'csv', // Custom type for CSV-imported properties
+        coordinates: {
+          lat,
+          lng
+        },
+        // Add additional properties as needed
+        rawData: row,
+        url: urlIndex !== -1 ? row[urlIndex] : null
+      };
+      
+      console.log(`Created property object:`, property);
+      return property;
+    }).filter(Boolean); // Remove null entries
+    
+    console.log("Final properties array:", properties);
+    
+    if (properties.length === 0) {
+      alert("No valid properties found with coordinates. Please make sure your Excel file contains either latitude/longitude columns or Google Maps URLs.");
+      return;
+    }
+    
+    // Update properties in the MapContext
+    setProperties(properties);
+    alert(`Successfully populated ${properties.length} properties from Excel data.`);
+    
+    console.log("Properties populated from Excel:", properties);
   };
 
   return (
@@ -620,6 +749,21 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggl
             </NestedCheckboxGroup>
           )}
         </CheckboxGroup>
+        
+        {/* Scout Matches section */}
+        <div style={{ marginTop: '15px', borderTop: '1px solid #e0e0e0', paddingTop: '15px' }}>
+          <SectionTitle>Scout Matches</SectionTitle>
+          <p style={{ fontSize: '14px', marginBottom: '10px' }}>
+            Show properties from the Excel data in Scout tab.
+          </p>
+          <ScoutButton onClick={populatePins}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            Populate Pins
+          </ScoutButton>
+        </div>
       </SidebarSection>
       
       {/* Hide Properties section when showProperties is false */}
@@ -630,14 +774,16 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggl
           </SidebarSection>
           
           <PropertiesContainer>
-            {properties.map(property => (
-              <PropertyCard 
-                key={property.id} 
-                property={property} 
-                onClick={() => selectProperty(property)}
-                isSelected={selectedProperty && selectedProperty.id === property.id}
-              />
-            ))}
+            {properties
+              .filter(property => property && property.id) // Filter out undefined or invalid properties
+              .map(property => (
+                <PropertyCard 
+                  key={property.id} 
+                  property={property} 
+                  onClick={() => selectProperty(property)}
+                  isSelected={selectedProperty && selectedProperty.id === property.id}
+                />
+              ))}
           </PropertiesContainer>
         </>
       )}

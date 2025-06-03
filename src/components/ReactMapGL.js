@@ -190,7 +190,7 @@ const PopupAddress = styled.p`
 `;
 
 const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = false }) => {
-  const { zoomLevel, mapCenter, mapZoom } = useContext(MapContext);
+  const { zoomLevel, mapCenter, mapZoom, properties, selectedProperty } = useContext(MapContext);
   
   const [viewState, setViewState] = useState({
     longitude: KRIENS_COORDINATES.lng,
@@ -725,6 +725,43 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
     return markers;
   };
 
+  // Render property markers from MapContext
+  const renderPropertyMarkers = () => {
+    if (!properties || !properties.length) return [];
+    
+    return properties.map(property => {
+      if (!property.coordinates || !property.coordinates.lat || !property.coordinates.lng) {
+        console.warn('Property missing coordinates:', property);
+        return null;
+      }
+      
+      return (
+        <Marker
+          key={`property-${property.id}`}
+          longitude={property.coordinates.lng}
+          latitude={property.coordinates.lat}
+          color="#E74C3C"  // Red color for properties
+          scale={0.8}
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            console.log('Property clicked:', property);
+            // You can add additional logic here to show property details
+          }}
+        >
+          {/* Custom marker for properties */}
+          <div style={{ 
+            width: '20px', 
+            height: '20px', 
+            background: property.id === (selectedProperty?.id || '') ? '#C0392B' : '#E74C3C',
+            borderRadius: '50%',
+            border: '2px solid white',
+            boxShadow: '0 0 5px rgba(0,0,0,0.3)'
+          }}/>
+        </Marker>
+      );
+    }).filter(Boolean);
+  };
+
   // Reset all overlays and isochrones
   const handleReset = () => {
     // Clear all isochrones
@@ -852,6 +889,9 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
 
         {/* Render POI markers */}
         {renderPOIMarkers()}
+        
+        {/* Render property markers */}
+        {showProperties !== false && renderPropertyMarkers()}
         
         {/* Show popup for selected POI */}
         {selectedPoi && (

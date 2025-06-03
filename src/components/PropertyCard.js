@@ -68,29 +68,68 @@ const Details = styled.div`
 const Detail = styled.span``;
 
 const formatPrice = (price) => {
+  // Handle both string and number prices
+  const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^0-9.-]/g, '')) : price;
+  
+  if (isNaN(numericPrice)) {
+    return price || 'N/A'; // Return original string if it can't be parsed
+  }
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0
-  }).format(price);
+  }).format(numericPrice);
 };
 
 const PropertyCard = ({ property, onClick, isSelected }) => {
-  const { title, type, price, bedrooms, bathrooms, sqft, images } = property;
+  // Safely destructure with default values
+  const {
+    title = 'Property',
+    type = 'csv',
+    price = 'N/A',
+    bedrooms = 'N/A',
+    bathrooms = 'N/A',
+    sqft = 'N/A',
+    images = [],
+    rawData = []
+  } = property || {};
+  
+  // For CSV properties, we might not have all the standard fields
+  // Check if this is a CSV property and handle accordingly
+  const isCSVProperty = type === 'csv';
+  
+  // Use a placeholder image for CSV properties that don't have images
+  const displayImage = images && images.length > 0 ? images[0] : 'https://via.placeholder.com/400x300?text=Property';
+  
+  // For CSV properties, try to extract details from rawData if available
+  let displayBedrooms = bedrooms;
+  let displayBathrooms = bathrooms;
+  let displaySqft = sqft;
+  
+  if (isCSVProperty && rawData && rawData.length > 0) {
+    // Try to find rooms, area, etc. from the raw CSV data
+    // This assumes the CSV might have columns like "Rooms", "Area", etc.
+    const roomsCol = rawData[2]; // Assuming Rooms is the 3rd column based on your Excel
+    const areaCol = rawData[3];  // Assuming Area is the 4th column
+    
+    if (roomsCol) displayBedrooms = roomsCol;
+    if (areaCol) displaySqft = areaCol;
+  }
   
   return (
     <Card onClick={onClick} isSelected={isSelected}>
       <ImageContainer>
-        <PropertyImage src={images[0]} alt={title} />
-        <PropertyType type={type}>{type}</PropertyType>
+        <PropertyImage src={displayImage} alt={title} />
+        <PropertyType type={type}>{type === 'csv' ? 'CSV' : type.toUpperCase()}</PropertyType>
       </ImageContainer>
       <CardContent>
         <Title>{title}</Title>
         <Price>{formatPrice(price)}</Price>
         <Details>
-          <Detail>{bedrooms} bed</Detail>
-          <Detail>{bathrooms} bath</Detail>
-          <Detail>{sqft} sqft</Detail>
+          <Detail>{displayBedrooms !== 'N/A' ? `${displayBedrooms} rooms` : 'Rooms: N/A'}</Detail>
+          <Detail>{displayBathrooms !== 'N/A' ? `${displayBathrooms} bath` : 'Bath: N/A'}</Detail>
+          <Detail>{displaySqft !== 'N/A' ? `${displaySqft} area` : 'Area: N/A'}</Detail>
         </Details>
       </CardContent>
     </Card>

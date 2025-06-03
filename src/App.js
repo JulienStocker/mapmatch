@@ -68,7 +68,7 @@ function AppContent() {
   const [mapComponent, setMapComponent] = useState('reactmapgl'); // 'reactmapgl', 'simple', or 'original'
   
   // Hide properties panel
-  const [showProperties, setShowProperties] = useState(false); // Setting this to false to hide properties
+  const [showProperties, setShowProperties] = useState(true); // Changed to true to show properties
 
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
