@@ -7,6 +7,8 @@ import { MapContext } from '../contexts/MapContext';
 import IsochroneControl from './IsochroneControl';
 import { fetchIsochrone, getFeatureColor } from '../services/isochroneService';
 import { fetchAllPOIs } from '../services/placesService';
+import IconMarker from './IconMarker';
+import { getMarkerConfig } from '../utils/markerIcons';
 
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoianVsaWVuc3RvY2tlciIsImEiOiJjbWFvYWhqMXAwNW9vMmpyMGtmNjBqYzZoIn0.MDBDP08GAAF2SuXeAN3yuw';
@@ -703,19 +705,27 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
           if (poi.geometry && poi.geometry.location) {
             const lat = poi.geometry.location.lat;
             const lng = poi.geometry.location.lng;
+            const isSelected = selectedPoi && selectedPoi.place_id === poi.place_id;
+            const markerConfig = getMarkerConfig(poiType, isSelected);
             
             markers.push(
               <Marker
                 key={`${poiType}-${poi.place_id}`}
                 longitude={lng}
                 latitude={lat}
-                color={getMarkerColor(poiType)}
-                scale={0.7}
                 onClick={(e) => {
                   e.originalEvent.stopPropagation();
                   setSelectedPoi({ ...poi, poiType });
                 }}
-              />
+              >
+                <IconMarker
+                  iconName={markerConfig.iconName}
+                  bgColor={markerConfig.bgColor}
+                  borderColor={markerConfig.borderColor}
+                  iconColor={markerConfig.iconColor}
+                  size={markerConfig.size}
+                />
+              </Marker>
             );
           }
         });
@@ -735,28 +745,27 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
         return null;
       }
       
+      const isSelected = property.id === (selectedProperty?.id || '');
+      const markerConfig = getMarkerConfig('properties', isSelected);
+      
       return (
         <Marker
           key={`property-${property.id}`}
           longitude={property.coordinates.lng}
           latitude={property.coordinates.lat}
-          color="#E74C3C"  // Red color for properties
-          scale={0.8}
           onClick={(e) => {
             e.originalEvent.stopPropagation();
             console.log('Property clicked:', property);
             // You can add additional logic here to show property details
           }}
         >
-          {/* Custom marker for properties */}
-          <div style={{ 
-            width: '20px', 
-            height: '20px', 
-            background: property.id === (selectedProperty?.id || '') ? '#C0392B' : '#E74C3C',
-            borderRadius: '50%',
-            border: '2px solid white',
-            boxShadow: '0 0 5px rgba(0,0,0,0.3)'
-          }}/>
+          <IconMarker
+            iconName={markerConfig.iconName}
+            bgColor={markerConfig.bgColor}
+            borderColor={markerConfig.borderColor}
+            iconColor={markerConfig.iconColor}
+            size="24px"
+          />
         </Marker>
       );
     }).filter(Boolean);
@@ -832,7 +841,6 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
         <Marker 
           longitude={markerPosition.longitude} 
           latitude={markerPosition.latitude} 
-          color="red"
           draggable={true}
           onClick={(e) => {
             e.originalEvent.stopPropagation();
@@ -885,7 +893,15 @@ const ReactMapGLComponent = ({ selectedPOITypes, resetPOIs, showProperties = fal
               setLocationName(`${evt.lngLat.lat.toFixed(4)}, ${evt.lngLat.lng.toFixed(4)}`);
             });
           }}
-        />
+        >
+          <IconMarker
+            iconName="location"
+            bgColor="#fff"
+            borderColor="#ff0000"
+            iconColor="#ff0000"
+            size="28px"
+          />
+        </Marker>
 
         {/* Render POI markers */}
         {renderPOIMarkers()}
