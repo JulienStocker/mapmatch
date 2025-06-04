@@ -184,7 +184,7 @@ function App() {
   return (
     <MapProvider>
       <CSVProvider>
-        <AppContent />
+      <AppContent />
       </CSVProvider>
     </MapProvider>
   );

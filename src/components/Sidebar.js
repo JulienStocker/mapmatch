@@ -777,13 +777,13 @@ const Sidebar = ({ selectedPOITypes, togglePOIType, toggleAllSupermarkets, toggl
             {properties
               .filter(property => property && property.id) // Filter out undefined or invalid properties
               .map(property => (
-                <PropertyCard 
-                  key={property.id} 
-                  property={property} 
-                  onClick={() => selectProperty(property)}
-                  isSelected={selectedProperty && selectedProperty.id === property.id}
-                />
-              ))}
+              <PropertyCard 
+                key={property.id} 
+                property={property} 
+                onClick={() => selectProperty(property)}
+                isSelected={selectedProperty && selectedProperty.id === property.id}
+              />
+            ))}
           </PropertiesContainer>
         </>
       )}

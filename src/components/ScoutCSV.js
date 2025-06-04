@@ -283,8 +283,8 @@ const ScoutCSV = () => {
           
           // Rest of rows contain data
           const dataRows = jsonData.slice(1);
-          
-          // Ensure each row has the same number of columns as the header
+            
+            // Ensure each row has the same number of columns as the header
           const formattedData = dataRows.map(row => {
             // Convert all values to strings and handle undefined/null
             const formattedRow = Array.isArray(row) ? row.map(cell => 
@@ -296,10 +296,10 @@ const ScoutCSV = () => {
             }
             return formattedRow;
           });
-          
-          // Add an empty row at the end for new entries
+        
+        // Add an empty row at the end for new entries
           formattedData.push(Array(headerRow.length).fill(''));
-          
+        
           console.log("Formatted data:", formattedData);
           setCsvData(formattedData);
         } else {
@@ -319,8 +319,8 @@ const ScoutCSV = () => {
         } catch (error) {
           console.error('Primary import method failed:', error);
           tryAlternativeImport();
-        }
-      };
+      }
+    };
       
       reader.onerror = (error) => {
         console.error('FileReader error in primary method:', error);
@@ -486,26 +486,26 @@ const ScoutCSV = () => {
                 {row.map((cell, cellIndex) => (
                   <TD key={cellIndex}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        value={cell}
-                        style={{ 
-                          width: '100%', 
-                          border: 'none',
-                          background: 'transparent',
-                          outline: 'none'
-                        }}
-                        onChange={(e) => {
-                          const newData = [...csvData];
-                          newData[rowIndex][cellIndex] = e.target.value;
-                          setCsvData(newData);
-                          
-                          // Add a new row if we're editing the last row
-                          if (rowIndex === csvData.length - 1) {
-                            setCsvData([...newData, Array(columns.length).fill('')]);
-                          }
-                        }}
-                      />
+                    <input
+                      type="text"
+                      value={cell}
+                      style={{ 
+                        width: '100%', 
+                        border: 'none',
+                        background: 'transparent',
+                        outline: 'none'
+                      }}
+                      onChange={(e) => {
+                        const newData = [...csvData];
+                        newData[rowIndex][cellIndex] = e.target.value;
+                        setCsvData(newData);
+                        
+                        // Add a new row if we're editing the last row
+                        if (rowIndex === csvData.length - 1) {
+                          setCsvData([...newData, Array(columns.length).fill('')]);
+                        }
+                      }}
+                    />
                       {isURL(cell) && (
                         <LinkIcon 
                           onClick={() => openURL(cell)}
