@@ -6,7 +6,9 @@ const {
   updateProperty,
   deleteProperty,
   getPropertiesByType,
-  getPropertiesInRadius
+  getPropertiesInRadius,
+  scrapeProperty,
+  getScrapedProperties
 } = require('../controllers/propertyController');
 
 const router = express.Router();
@@ -15,6 +17,14 @@ router
   .route('/')
   .get(getProperties)
   .post(createProperty);
+
+router
+  .route('/scrape')
+  .post(scrapeProperty);
+
+router
+  .route('/scraped')
+  .get(getScrapedProperties);
 
 router
   .route('/type/:type')
